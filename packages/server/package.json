@@ -15,7 +15,12 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.17",
+    "@langchain/core": "^1.2.3",
+    "@langchain/openai": "^1.5.5",
+    "@supabase/supabase-js": "^2.110.8",
     "ai": "^7.0.34",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "langchain": "^1.5.3",
+    "zod": "^4.4.3"
   }
 }
