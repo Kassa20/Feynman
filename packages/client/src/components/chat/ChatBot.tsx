@@ -1,19 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChatInput, type ChatFormData } from "./ChatInput";
 import { api } from "@/lib/api";
 import { ChatMessages, type Message } from "./ChatMessages";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
 type ChatResponse = {
   message: string;
 };
 
+type MessagesResponse = {
+  messages: Message[];
+};
+
 export const ChatBot = () => {
   const navigate = useNavigate();
+  const { conversationId } = useParams<{ conversationId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
-  const conversationId = "080b93fa-5bfd-4e61-ad87-200611c212c9";
   const labGenerationId = "5a1f2e3d-4b5c-4d6e-8f7a-9b0c1d2e3f4a";
+
+  useEffect(() => {
+    if (!conversationId) return;
+    api
+      .get<MessagesResponse>(`/api/conversations/${conversationId}/messages`)
+      .then(({ data }) => setMessages(data.messages))
+      .catch(() => setMessages([]));
+  }, [conversationId]);
 
   const onSubmit = async ({ prompt }: ChatFormData) => {
     const {
@@ -26,15 +38,11 @@ export const ChatBot = () => {
 
     setMessages((prev) => [...prev, { content: prompt, role: "user" }]);
 
-    const { data } = await api.post<ChatResponse>(
-      "/api/chat",
-      {
-        prompt,
-        conversationId,
-        labGenerationId,
-      },
-      { headers: { Authorization: `Bearer ${session.access_token}` } },
-    );
+    const { data } = await api.post<ChatResponse>("/api/chat", {
+      prompt,
+      conversationId,
+      labGenerationId,
+    });
 
     setMessages((prev) => [
       ...prev,
