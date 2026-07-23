@@ -29,7 +29,7 @@ export const conversationRepository = {
             .from('messages')
             .insert([
                 {conversation_id: conversationId, role: 'user', content: humanText},
-                {conversation_id: conversationId, role: 'assistant', content: aiText}
+                {conversation_id: conversationId, role: 'ai', content: aiText}
             ]);
         if (error) throw new Error(`addMessages failed: ${error.message}`);
     }

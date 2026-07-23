@@ -10,7 +10,6 @@ const chatSchema = z.object({
         .max(1000, {message: 'Prompt cannot exceed 1000 characters'}),
     conversationId: z.string().uuid(),
     labGenerationId: z.string().uuid(),
-    userId: z.string().uuid() // TODO: temporary, remove once auth middleware sets req.user
 })
 
 export const chatController = {
@@ -23,12 +22,13 @@ export const chatController = {
         }
 
         try {
-            const {prompt, conversationId, labGenerationId, userId} = parseResult.data;
-            const response = await chatService.sendMessage(prompt, conversationId, userId, labGenerationId)
+            const {prompt, conversationId, labGenerationId} = parseResult.data;
+            const response = await chatService.sendMessage(prompt, conversationId, req.user!.id, labGenerationId)
             res.json({message: response.message})
         }
         catch (error) {
             console.error('[chat] error:', error)
+            res.status(500).json({ message: 'Something went wrong' })
         }
     }
 }
