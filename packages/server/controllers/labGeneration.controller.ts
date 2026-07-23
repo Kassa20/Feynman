@@ -10,6 +10,7 @@ const generateSchema = z.object({
         .max(500, { message: 'Topic cannot exceed 500 characters' }),
     skillLevel: z.enum(['beginner', 'intermediate', 'advanced']),
     environment: z.enum(['macos', 'linux', 'windows']),
+    conversationId: z.string().uuid(),
 })
 
 export const labGenerationController = {
@@ -20,8 +21,8 @@ export const labGenerationController = {
         }
 
         try {
-            const { topic, skillLevel, environment } = parseResult.data;
-            const result = await labGenerationService.generate(topic, skillLevel, environment)
+            const { topic, skillLevel, environment, conversationId } = parseResult.data;
+            const result = await labGenerationService.generate(topic, skillLevel, environment, conversationId, req.user!.id)
             res.json(result)
         }
         catch (error) {

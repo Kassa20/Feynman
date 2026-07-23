@@ -5,6 +5,7 @@ import {
     type SkillLevel,
     type TargetEnvironment,
 } from '../repositories/labGeneration.repository';
+import { conversationRepository } from '../repositories/conversation.repository';
 
 const labContentSchema = z.object({
     title: z.string(),
@@ -12,7 +13,7 @@ const labContentSchema = z.object({
         z.object({
             title: z.string(),
             description: z.string(),
-            code: z.string().optional(),
+            code: z.string().nullable(),
         }),
     ),
 })
@@ -21,24 +22,39 @@ export type LabContent = z.infer<typeof labContentSchema>;
 
 const llm = new ChatOpenAI({ model: 'gpt-4o', maxTokens: 2000 }).withStructuredOutput(labContentSchema)
 
+export function formatLabAsMarkdown(content: LabContent): string {
+    const stepsMd = content.steps
+        .map((step, i) => {
+            const codeBlock = step.code ? `\n\n\`\`\`bash\n${step.code}\n\`\`\`` : ''
+            return `### ${i + 1}. ${step.title}\n\n${step.description}${codeBlock}`
+        })
+        .join('\n\n')
+    return `# ${content.title}\n\n${stepsMd}`
+}
+
 export const labGenerationService = {
     async generate(
         topicText: string,
         skillLevel: SkillLevel,
         environment: TargetEnvironment,
+        conversationId: string,
+        userId: string,
     ): Promise<{ id: string; content: LabContent }> {
         const cached = await labGenerationRepository.findCached(topicText, skillLevel, environment)
-        if (cached) {
-            return { id: cached.id, content: cached.content as LabContent }
-        }
 
-        const content = await llm.invoke(
-            `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
-            `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
-            `Each step should have a title, a description, and optionally a shell code snippet to run.`,
-        )
+        const labContent = cached
+            ? (cached.content as LabContent)
+            : await llm.invoke(
+                `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
+                `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
+                `Each step should have a title, a description, and optionally a shell code snippet to run.`,
+            )
 
-        const created = await labGenerationRepository.create(topicText, skillLevel, environment, content)
-        return { id: created.id, content: created.content as LabContent }
+        const created = cached ?? await labGenerationRepository.create(topicText, skillLevel, environment, labContent)
+
+        await conversationRepository.ensureConversation(conversationId, userId)
+        await conversationRepository.addMessages(conversationId, null, formatLabAsMarkdown(labContent))
+
+        return { id: created.id, content: labContent }
     },
 }

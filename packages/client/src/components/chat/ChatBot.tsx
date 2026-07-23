@@ -13,7 +13,11 @@ type MessagesResponse = {
   messages: Message[];
 };
 
-export const ChatBot = () => {
+type Props = {
+  refreshSignal?: number;
+};
+
+export const ChatBot = ({ refreshSignal }: Props) => {
   const navigate = useNavigate();
   const { conversationId } = useParams<{ conversationId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -25,7 +29,7 @@ export const ChatBot = () => {
       .get<MessagesResponse>(`/api/conversations/${conversationId}/messages`)
       .then(({ data }) => setMessages(data.messages))
       .catch(() => setMessages([]));
-  }, [conversationId]);
+  }, [conversationId, refreshSignal]);
 
   const onSubmit = async ({ prompt }: ChatFormData) => {
     const {

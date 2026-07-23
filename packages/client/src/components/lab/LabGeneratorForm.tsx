@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useParams } from "react-router-dom";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -21,18 +22,26 @@ const labGeneratorSchema = z.object({
 
 type LabGeneratorFormData = z.infer<typeof labGeneratorSchema>;
 
-const skillLevels: { value: LabGeneratorFormData["skillLevel"]; label: string }[] = [
+const skillLevels: {
+  value: LabGeneratorFormData["skillLevel"];
+  label: string;
+}[] = [
   { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
 ];
 
-type GenerateResponse = {
+type LabResponse = {
   id: string;
   content: unknown;
 };
 
-export const LabGeneratorForm = () => {
+type Props = {
+  onLabGenerated?: () => void;
+};
+
+export const LabGeneratorForm = ({ onLabGenerated }: Props) => {
+  const { conversationId } = useParams<{ conversationId: string }>();
   const {
     register,
     handleSubmit,
@@ -59,12 +68,14 @@ export const LabGeneratorForm = () => {
     setGeneratedId(null);
 
     try {
-      const { data } = await api.post<GenerateResponse>("/api/labs/generate", {
+      const { data } = await api.post<LabResponse>("/api/labs/generate", {
         topic,
         skillLevel,
         environment,
+        conversationId,
       });
       setGeneratedId(data.id);
+      onLabGenerated?.();
     } catch {
       setError("Something went wrong generating your lab. Please try again.");
     } finally {
@@ -145,7 +156,7 @@ export const LabGeneratorForm = () => {
       <div className="flex shrink-0 flex-col gap-2 pt-4">
         {generatedId && (
           <p className="text-sm text-muted-foreground">
-            Lab generated — see it soon.
+            Lab generated — see it in the chat.
           </p>
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}

@@ -61,15 +61,18 @@ export const conversationRepository = {
 
     async addMessages(
         conversationId: string,
-        humanText: string,
+        humanText: string | null,
         aiText: string
     ): Promise<void> {
-        const {error} = await supabase
-            .from('messages')
-            .insert([
+        const rows = humanText === null
+            ? [{conversation_id: conversationId, role: 'ai', content: aiText}]
+            : [
                 {conversation_id: conversationId, role: 'user', content: humanText},
                 {conversation_id: conversationId, role: 'ai', content: aiText}
-            ]);
+            ]
+        const {error} = await supabase
+            .from('messages')
+            .insert(rows);
         if (error) throw new Error(`addMessages failed: ${error.message}`);
     }
 
