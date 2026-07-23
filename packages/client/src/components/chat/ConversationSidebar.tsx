@@ -30,7 +30,7 @@ export const ConversationSidebar = () => {
   };
 
   return (
-    <div className="flex w-64 shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground">
+    <div className="flex h-full w-64 shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground">
       <button
         onClick={onNewChat}
         className="flex items-center gap-2 rounded-xl border border-sidebar-border px-3 py-2 text-sm font-semibold hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -38,7 +38,7 @@ export const ConversationSidebar = () => {
         <Plus size={16} />
         New chat
       </button>
-      <div className="flex flex-col gap-1 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
         {conversations.map((conversation) => (
           <Link
             key={conversation.id}

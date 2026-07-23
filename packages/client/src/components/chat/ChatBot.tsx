@@ -54,8 +54,10 @@ export const ChatBot = () => {
   };
 
   return (
-    <div>
-      <ChatMessages messages={messages} />
+    <div className="flex h-full flex-col gap-3">
+      <div className="flex-1 overflow-y-auto">
+        <ChatMessages messages={messages} />
+      </div>
       <ChatInput onSubmit={onSubmit} />
     </div>
   );
