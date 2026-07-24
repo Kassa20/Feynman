@@ -9,6 +9,8 @@ type chatResponse = {
 
 const llm = new ChatOpenAI({model: 'gpt-4o', maxTokens: 500})
 
+export class ConversationNotFoundError extends Error {}
+
 export const chatService = {
     async sendMessage(
         prompt: string,
@@ -16,8 +18,11 @@ export const chatService = {
         userId: string,
         labGenerationId: string,
     ): Promise<chatResponse> {
-        await conversationRepository.ensureConversation(conversationId, userId);
-        const response = await llm.invoke([new HumanMessage(prompt)]);
+        const chatHistory = await conversationRepository.getMessages(conversationId, userId);
+        if (chatHistory === null) {
+            throw new ConversationNotFoundError(`Conversation ${conversationId} not found`);
+        }
+        const response = await llm.invoke([new HumanMessage(prompt), ...chatHistory]);
 
         await conversationRepository.addMessages(conversationId, prompt, response.content as string)
 
