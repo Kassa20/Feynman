@@ -43,6 +43,7 @@ export const LabGeneratorForm = () => {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isValid },
   } = useForm<LabGeneratorFormData>({
     resolver: zodResolver(labGeneratorSchema),
@@ -70,6 +71,7 @@ export const LabGeneratorForm = () => {
         environment,
         conversationId,
       });
+      reset();
       navigate(`/chat/${conversationId}`);
     } catch {
       setError("Something went wrong generating your lab. Please try again.");
