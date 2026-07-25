@@ -26,7 +26,7 @@ export const ConversationSidebar = () => {
   }, [conversationId]);
 
   const onNewChat = () => {
-    navigate(`/chat/${crypto.randomUUID()}`);
+    navigate("/");
   };
 
   return (

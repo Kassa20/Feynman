@@ -1,6 +1,6 @@
 import z from 'zod';
 import type { Request, Response } from 'express';
-import { chatService } from '../services/chat.service';
+import { chatService, ConversationNotFoundError } from '../services/chat.service';
 
 const chatSchema = z.object({
     prompt: z
@@ -27,6 +27,9 @@ export const chatController = {
             res.json({message: response.message})
         }
         catch (error) {
+            if (error instanceof ConversationNotFoundError) {
+                return res.status(404).json({ message: 'Conversation not found' })
+            }
             console.error('[chat] error:', error)
             res.status(500).json({ message: 'Something went wrong' })
         }

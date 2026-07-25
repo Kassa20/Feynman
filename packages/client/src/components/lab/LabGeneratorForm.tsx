@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -36,12 +36,8 @@ type LabResponse = {
   content: unknown;
 };
 
-type Props = {
-  onLabGenerated?: () => void;
-};
-
-export const LabGeneratorForm = ({ onLabGenerated }: Props) => {
-  const { conversationId } = useParams<{ conversationId: string }>();
+export const LabGeneratorForm = () => {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -54,7 +50,6 @@ export const LabGeneratorForm = ({ onLabGenerated }: Props) => {
   });
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [generatedId, setGeneratedId] = useState<string | null>(null);
 
   const skillLevel = watch("skillLevel");
 
@@ -65,17 +60,17 @@ export const LabGeneratorForm = ({ onLabGenerated }: Props) => {
   }: LabGeneratorFormData) => {
     setGenerating(true);
     setError(null);
-    setGeneratedId(null);
+
+    const conversationId = crypto.randomUUID();
 
     try {
-      const { data } = await api.post<LabResponse>("/api/labs/generate", {
+      await api.post<LabResponse>("/api/labs/generate", {
         topic,
         skillLevel,
         environment,
         conversationId,
       });
-      setGeneratedId(data.id);
-      onLabGenerated?.();
+      navigate(`/chat/${conversationId}`);
     } catch {
       setError("Something went wrong generating your lab. Please try again.");
     } finally {
@@ -154,11 +149,6 @@ export const LabGeneratorForm = ({ onLabGenerated }: Props) => {
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 pt-4">
-        {generatedId && (
-          <p className="text-sm text-muted-foreground">
-            Lab generated — see it in the chat.
-          </p>
-        )}
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button

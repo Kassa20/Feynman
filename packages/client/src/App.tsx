@@ -13,7 +13,7 @@ function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Navigate to={`/chat/${crypto.randomUUID()}`} replace />
+            <HomePage />
           </ProtectedRoute>
         }
       />
