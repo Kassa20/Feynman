@@ -40,19 +40,15 @@ export const labGenerationService = {
         conversationId: string,
         userId: string,
     ): Promise<{ id: string; content: LabContent }> {
-        const cached = await labGenerationRepository.findCached(topicText, skillLevel, environment)
+        const labContent = await llm.invoke(
+            `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
+            `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
+            `Each step should have a title, a description, and optionally a shell code snippet to run.`,
+        )
 
-        const labContent = cached
-            ? (cached.content as LabContent)
-            : await llm.invoke(
-                `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
-                `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
-                `Each step should have a title, a description, and optionally a shell code snippet to run.`,
-            )
+        const created = await labGenerationRepository.create(topicText, skillLevel, environment, labContent)
 
-        const created = cached ?? await labGenerationRepository.create(topicText, skillLevel, environment, labContent)
-
-        await conversationRepository.ensureConversation(conversationId, userId)
+        await conversationRepository.ensureConversation(conversationId, userId, created.id)
         await conversationRepository.addMessages(conversationId, null, formatLabAsMarkdown(labContent))
 
         return { id: created.id, content: labContent }

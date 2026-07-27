@@ -18,7 +18,6 @@ export const ChatBot = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const labGenerationId = "5a1f2e3d-4b5c-4d6e-8f7a-9b0c1d2e3f4a";
 
   useEffect(() => {
     if (!conversationId) return;
@@ -44,7 +43,6 @@ export const ChatBot = () => {
       const { data } = await api.post<ChatResponse>("/api/chat", {
         prompt,
         conversationId,
-        labGenerationId,
       });
 
       setMessages((prev) => [

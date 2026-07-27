@@ -9,23 +9,6 @@ export type LabGenerationRow = {
 }
 
 export const labGenerationRepository = {
-    async findCached(
-        topicText: string,
-        skillLevel: SkillLevel,
-        environment: TargetEnvironment,
-    ): Promise<LabGenerationRow | null> {
-        const { data, error } = await supabase
-            .from('lab_generations')
-            .select('id, content')
-            .eq('topic_text', topicText)
-            .eq('skill_level', skillLevel)
-            .eq('environment', environment)
-            .maybeSingle()
-
-        if (error) throw new Error(`findCached failed: ${error.message}`)
-        return data
-    },
-
     async create(
         topicText: string,
         skillLevel: SkillLevel,

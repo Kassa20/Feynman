@@ -49,14 +49,26 @@ export const conversationRepository = {
         return (data.messages as MessageRow[] | null) ?? []
     },
 
-    async ensureConversation(conversationId: string, userId: string): Promise<void> {
+    async ensureConversation(conversationId: string, userId: string, labGenerationId: string): Promise<void> {
         const {error} = await supabase
             .from('conversations')
             .upsert(
-                {id: conversationId, user_id: userId},
+                {id: conversationId, user_id: userId, lab_generation_id: labGenerationId},
                 { onConflict: 'id', ignoreDuplicates: true },
             )
         if (error) throw new Error(`ensureConversation failed: ${error.message}`)
+    },
+
+    async getLabGenerationId(conversationId: string, userId: string): Promise<string | null> {
+        const { data, error } = await supabase
+            .from('conversations')
+            .select('lab_generation_id')
+            .eq('id', conversationId)
+            .eq('user_id', userId)
+            .maybeSingle()
+
+        if (error) throw new Error(`getLabGenerationId failed: ${error.message}`)
+        return data?.lab_generation_id ?? null
     },
 
     async addMessages(
