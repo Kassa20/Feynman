@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.110.8",
     "ai": "^7.0.34",
     "express": "^5.2.1",
+    "fflate": "^0.8.3",
     "langchain": "^1.5.3",
     "zod": "^4.4.3"
   }

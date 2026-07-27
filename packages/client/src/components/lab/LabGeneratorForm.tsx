@@ -18,6 +18,7 @@ const labGeneratorSchema = z.object({
     message: "Select a skill level",
   }),
   environment: z.enum(["macos", "linux", "windows"]),
+  starterCode: z.boolean(),
 });
 
 type LabGeneratorFormData = z.infer<typeof labGeneratorSchema>;
@@ -47,7 +48,7 @@ export const LabGeneratorForm = () => {
     formState: { errors, isValid },
   } = useForm<LabGeneratorFormData>({
     resolver: zodResolver(labGeneratorSchema),
-    defaultValues: { topic: "", environment: "macos" },
+    defaultValues: { topic: "", environment: "macos", starterCode: false },
   });
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export const LabGeneratorForm = () => {
     topic,
     skillLevel,
     environment,
+    starterCode,
   }: LabGeneratorFormData) => {
     setGenerating(true);
     setError(null);
@@ -69,6 +71,7 @@ export const LabGeneratorForm = () => {
         topic,
         skillLevel,
         environment,
+        starterCode,
         conversationId,
       });
       reset();
@@ -147,6 +150,24 @@ export const LabGeneratorForm = () => {
             <option value="linux">Linux</option>
             <option value="windows">Windows (WSL2)</option>
           </select>
+        </div>
+
+        <div>
+          <label className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              {...register("starterCode")}
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+            />
+            <span>
+              <span className="text-sm font-semibold text-muted-foreground">
+                Generate starter code
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground/70">
+                Downloadable project scaffold with dependencies listed
+              </span>
+            </span>
+          </label>
         </div>
       </div>
 

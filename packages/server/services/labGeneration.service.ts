@@ -1,4 +1,5 @@
 import { ChatOpenAI } from '@langchain/openai';
+import { starterCodeService } from './starterCode.service';  
 import z from 'zod';
 import {
     labGenerationRepository,
@@ -39,6 +40,7 @@ export const labGenerationService = {
         environment: TargetEnvironment,
         conversationId: string,
         userId: string,
+        starterCode: boolean,
     ): Promise<{ id: string; content: LabContent }> {
         const labContent = await llm.invoke(
             `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
@@ -46,7 +48,23 @@ export const labGenerationService = {
             `Each step should have a title, a description, and optionally a shell code snippet to run.`,
         )
 
-        const created = await labGenerationRepository.create(topicText, skillLevel, environment, labContent)
+        let starterCodeContent = null
+        if (starterCode) {
+            try {
+                starterCodeContent = await starterCodeService.generate(
+                    topicText, skillLevel, environment, labContent,
+                )
+            } catch (error) {
+                console.error('[labs] starter code generation failed:', error)
+            }
+        }
+
+        const created = await labGenerationRepository.create(
+            topicText, 
+            skillLevel, 
+            environment, 
+            labContent,
+            starterCodeContent)
 
         await conversationRepository.ensureConversation(conversationId, userId, created.id)
         await conversationRepository.addMessages(conversationId, null, formatLabAsMarkdown(labContent))

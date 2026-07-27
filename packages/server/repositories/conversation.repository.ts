@@ -1,8 +1,5 @@
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
-import type { BaseMessage } from '@langchain/core/messages';
-import {supabase} from '../lib/supabase'
 
-export type ConversationRow = { id: string, created_at: string}
+import {supabase} from '../lib/supabase'
 
 export type MessageRow = {
     role: string;
@@ -15,8 +12,13 @@ export type ConversationSummary = {
     title: string;
 }
 
+export type ConversationMessages = {
+    messages: MessageRow[];
+    starterCodeLabId: string | null;
+}
+
 export const conversationRepository = {
-    async listByUser(userId: string): Promise<ConversationSummary[]> {
+    async getConversations(userId: string): Promise<ConversationSummary[]> {
         const { data, error } = await supabase
             .from('conversations')
             .select('id, created_at, messages(content, created_at)')
@@ -25,7 +27,7 @@ export const conversationRepository = {
             .order('created_at', { referencedTable: 'messages', ascending: true })
             .limit(1, { foreignTable: 'messages' })
 
-        if (error) throw new Error(`listByUser failed: ${error.message}`)
+        if (error) throw new Error(`getConversations failed: ${error.message}`)
 
         return (data ?? []).map((row) => {
             const firstMessage = (row.messages as { content: string }[] | null)?.[0]
@@ -34,10 +36,10 @@ export const conversationRepository = {
         })
     },
 
-    async getMessages(conversationId: string, userId: string): Promise<MessageRow[] | null> {
+    async getMessages(conversationId: string, userId: string): Promise<ConversationMessages | null> {
         const { data, error } = await supabase
             .from('conversations')
-            .select('id, messages(role, content, created_at)')
+            .select('id, lab_generation_id, messages(role, content, created_at), lab_generations(starter_code)')
             .eq('id', conversationId)
             .eq('user_id', userId)
             .order('created_at', { referencedTable: 'messages', ascending: true })
@@ -46,7 +48,13 @@ export const conversationRepository = {
         if (error) throw new Error(`getMessages failed: ${error.message}`)
         if (!data) return null
 
-        return (data.messages as MessageRow[] | null) ?? []
+        const lab = data.lab_generations as unknown as { starter_code: unknown } | null
+
+        return {
+            messages: (data.messages as MessageRow[] | null) ?? [],
+            // Only expose the id when there is actually something to download.
+            starterCodeLabId: lab?.starter_code ? data.lab_generation_id : null,
+        }
     },
 
     async ensureConversation(conversationId: string, userId: string, labGenerationId: string): Promise<void> {

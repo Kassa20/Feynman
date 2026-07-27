@@ -9,7 +9,7 @@ const paramsSchema = z.object({
 export const conversationController = {
     async list(req: Request, res: Response) {
         try {
-            const conversations = await conversationRepository.listByUser(req.user!.id);
+            const conversations = await conversationRepository.getConversations(req.user!.id);
             res.json({ conversations })
         }
         catch (error) {
@@ -25,11 +25,11 @@ export const conversationController = {
         }
 
         try {
-            const messages = await conversationRepository.getMessages(parseResult.data.id, req.user!.id);
-            if (!messages) {
+            const result = await conversationRepository.getMessages(parseResult.data.id, req.user!.id);
+            if (!result) {
                 return res.status(404).json({ message: 'Conversation not found' })
             }
-            res.json({ messages })
+            res.json(result)
         }
         catch (error) {
             console.error('[conversations] error:', error)

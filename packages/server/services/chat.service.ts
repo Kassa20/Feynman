@@ -27,7 +27,7 @@ export const chatService = {
         }
         const response = await llm.invoke([new SystemMessage(SYSTEM_PROMPT),
                                             new HumanMessage(prompt),
-                                            ...chatHistory
+                                            ...chatHistory.messages
                                         ]);
 
         await conversationRepository.addMessages(conversationId, prompt, response.content as string)
