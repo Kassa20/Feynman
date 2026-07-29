@@ -41,7 +41,7 @@ export const labGenerationService = {
         conversationId: string,
         userId: string,
         starterCode: boolean,
-    ): Promise<{ id: string; content: LabContent }> {
+    ): Promise<void> {
         const labContent = await llm.invoke(
             `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
             `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
@@ -59,16 +59,14 @@ export const labGenerationService = {
             }
         }
 
-        const created = await labGenerationRepository.create(
+        const labGeneration = await labGenerationRepository.create(
             topicText, 
             skillLevel, 
             environment, 
             labContent,
             starterCodeContent)
 
-        await conversationRepository.ensureConversation(conversationId, userId, created.id)
+        await conversationRepository.ensureConversation(conversationId, userId, labGeneration.id)
         await conversationRepository.addMessages(conversationId, null, formatLabAsMarkdown(labContent))
-
-        return { id: created.id, content: labContent }
     },
 }

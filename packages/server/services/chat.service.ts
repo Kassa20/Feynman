@@ -26,8 +26,8 @@ export const chatService = {
             throw new ConversationNotFoundError(`Conversation ${conversationId} not found`);
         }
         const response = await llm.invoke([new SystemMessage(SYSTEM_PROMPT),
+                                            ...chatHistory.messages,
                                             new HumanMessage(prompt),
-                                            ...chatHistory.messages
                                         ]);
 
         await conversationRepository.addMessages(conversationId, prompt, response.content as string)
