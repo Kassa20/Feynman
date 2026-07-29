@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ChatBot } from "@/components/chat/ChatBot";
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
 import { LabGeneratorForm } from "@/components/lab/LabGeneratorForm";
 
 export function HomePage() {
+  const { conversationId } = useParams<{ conversationId: string }>();
+
   return (
     <div className="relative flex h-full">
       <Link
@@ -20,7 +22,7 @@ export function HomePage() {
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
             <div className="mx-auto h-full max-w-2xl">
-              <ChatBot />
+              <ChatBot key={conversationId} />
             </div>
           </div>
         </div>

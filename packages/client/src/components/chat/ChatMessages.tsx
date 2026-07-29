@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "./CodeBlock";
@@ -56,17 +55,6 @@ const markdownComponents: Components = {
 };
 
 export const ChatMessages = ({ messages }: Props) => {
-  const lastMessageRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    lastMessageRef.current?.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-    });
-  }, [messages]);
-
   const onCopyMessage = (
     e: import("react").ClipboardEvent<HTMLDivElement>,
   ): void => {
@@ -84,7 +72,6 @@ export const ChatMessages = ({ messages }: Props) => {
           <div
             key={index}
             onCopy={onCopyMessage}
-            ref={index === messages.length - 1 ? lastMessageRef : null}
             className={`text-sm leading-relaxed rounded-[14px] border px-4 ${
               message.role === "user"
                 ? "rounded-br-lg border-primary-foreground/20 bg-primary py-2.5 text-primary-foreground self-end max-w-md dark:border-white/22 dark:bg-white/10 dark:text-[#ECEAF4]"

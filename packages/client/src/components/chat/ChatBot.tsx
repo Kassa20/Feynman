@@ -1,14 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
 import { ChatInput, type ChatFormData } from "./ChatInput";
-import { api } from "@/lib/api";
+import { api, authHeaders } from "@/lib/api";
 import { ChatMessages, type Message } from "./ChatMessages";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "../ui/button";
+import type { LabGeneratorFormData } from "../lab/LabGeneratorForm";
+import type { DeepPartial } from "react-hook-form";
+import { StreamingLab } from "./StreamingLab";
 
 type ChatResponse = {
   message: string;
+};
+
+export type LabContent = {
+  title: string;
+  steps: { title: string; description: string; code: string | null }[];
 };
 
 type MessagesResponse = {
@@ -24,19 +32,108 @@ export const ChatBot = () => {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const location = useLocation();
+  const labData = location.state?.labData as LabGeneratorFormData | undefined;
+  const [streamingLab, setStreamingLab] =
+    useState<DeepPartial<LabContent> | null>(null);
+  const [phase, setPhase] = useState<"idle" | "lab" | "starter-code">("idle");
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Autoscroll: stay pinned to the bottom while the user hasn't scrolled up,
+  // and follow every new source of content — persisted messages, streaming
+  // lab deltas, and the starter-code status line all live in this container.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const pinnedRef = useRef(true);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  });
+
   useEffect(() => {
-    if (!conversationId) return;
+    if (!pinnedRef.current) return;
+    containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight });
+  }, [messages, streamingLab, phase]);
+
+  useEffect(() => {
+    if (labData || !conversationId) return;
     api
       .get<MessagesResponse>(`/api/conversations/${conversationId}/messages`)
       .then(({ data }) => {
         setMessages(data.messages);
         setStarterCodeLabId(data.starterCodeLabId);
-      })
-      .catch(() => {
-        setMessages([]);
-        setStarterCodeLabId(null);
       });
-  }, [conversationId]);
+  }, [conversationId, labData]);
+
+  useEffect(() => {
+    if (!labData || !conversationId) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    (async () => {
+      setPhase("lab");
+      const response = await fetch(`/api/labs/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await authHeaders()),
+        },
+        body: JSON.stringify({ ...labData, conversationId }),
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body)
+        throw new Error(`Request failed: ${response.status}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() ?? "";
+
+        for (const frame of frames) {
+          if (!frame.startsWith("data: ")) continue;
+          const event = JSON.parse(frame.slice(6));
+
+          if (event.type === "lab-delta") setStreamingLab(event.partial);
+          if (event.type === "starter-code-start") setPhase("starter-code");
+          if (event.type === "starter-code-failed") {
+            setPhase("idle");
+            setError(
+              "Your lab is ready, but starter code couldn't be generated.",
+            );
+          }
+
+          if (event.type === "lab-done") {
+            setStreamingLab(null);
+            setPhase("idle");
+
+            const { data } = await api.get<MessagesResponse>(
+              `/api/conversations/${conversationId}/messages`,
+            );
+            setMessages(data.messages);
+            setStarterCodeLabId(data.starterCodeLabId);
+          }
+          if (event.type === "error") setError(event.message);
+        }
+      }
+    })().catch((err) => {
+      if ((err as Error).name !== "AbortError") {
+        setError("Something went wrong generating your lab.");
+      }
+    });
+
+    return () => {
+      controller.abort();
+      abortRef.current = null;
+    };
+  }, [labData, conversationId]);
 
   const onDownload = async () => {
     if (!starterCodeLabId) return;
@@ -118,8 +215,26 @@ export const ChatBot = () => {
           </Button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto">
+      {phase !== "idle" && (
+        <div className="flex shrink-0 justify-end border-b border-border pb-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => abortRef.current?.abort()}
+            className="rounded-xl"
+          >
+            Stop
+          </Button>
+        </div>
+      )}
+      <div ref={containerRef} className="flex-1 overflow-y-auto">
         <ChatMessages messages={messages} />
+        {streamingLab && <StreamingLab content={streamingLab} />}
+        {phase === "starter-code" && (
+          <p className="text-sm text-muted-foreground">
+            Generating starter code…
+          </p>
+        )}
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <ChatInput onSubmit={onSubmit} />

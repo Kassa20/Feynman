@@ -6,11 +6,14 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
+  Object.assign(config.headers, await authHeaders())
   return config;
 });
+
+export async function authHeaders(): Promise<Record<string, string>> {
+  const {
+    data: { session }, 
+  } = await supabase.auth.getSession();
+
+  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
+}

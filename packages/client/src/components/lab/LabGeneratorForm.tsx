@@ -1,9 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -21,7 +19,7 @@ const labGeneratorSchema = z.object({
   starterCode: z.boolean(),
 });
 
-type LabGeneratorFormData = z.infer<typeof labGeneratorSchema>;
+export type LabGeneratorFormData = z.infer<typeof labGeneratorSchema>;
 
 const skillLevels: {
   value: LabGeneratorFormData["skillLevel"];
@@ -31,11 +29,6 @@ const skillLevels: {
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
 ];
-
-type LabResponse = {
-  id: string;
-  content: unknown;
-};
 
 export const LabGeneratorForm = () => {
   const navigate = useNavigate();
@@ -50,37 +43,13 @@ export const LabGeneratorForm = () => {
     resolver: zodResolver(labGeneratorSchema),
     defaultValues: { topic: "", environment: "macos", starterCode: false },
   });
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const skillLevel = watch("skillLevel");
 
-  const onSubmit = async ({
-    topic,
-    skillLevel,
-    environment,
-    starterCode,
-  }: LabGeneratorFormData) => {
-    setGenerating(true);
-    setError(null);
-
+  const onSubmit = (data: LabGeneratorFormData) => {
     const conversationId = crypto.randomUUID();
-
-    try {
-      await api.post<LabResponse>("/api/labs/generate", {
-        topic,
-        skillLevel,
-        environment,
-        starterCode,
-        conversationId,
-      });
-      reset();
-      navigate(`/chat/${conversationId}`);
-    } catch {
-      setError("Something went wrong generating your lab. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
+    reset();
+    navigate(`/chat/${conversationId}`, { state: { labData: data } });
   };
 
   return (
@@ -172,15 +141,11 @@ export const LabGeneratorForm = () => {
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 pt-4">
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
         <Button
           type="submit"
-          disabled={!isValid || generating}
+          disabled={!isValid}
           className="w-56 self-center rounded-xl px-6 py-6"
-        >
-          {generating ? "Writing your lab…" : "Generate"}
-        </Button>
+        >Generate</Button>
       </div>
     </form>
   );

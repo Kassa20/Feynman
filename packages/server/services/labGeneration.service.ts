@@ -1,10 +1,11 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { starterCodeService } from './starterCode.service';  
+import { openai } from '@ai-sdk/openai';
+import { Output, streamText } from 'ai';
 import z from 'zod';
+import { starterCodeService } from './starterCode.service';
 import {
-    labGenerationRepository,
-    type SkillLevel,
-    type TargetEnvironment,
+  labGenerationRepository,
+  type SkillLevel,
+  type TargetEnvironment,
 } from '../repositories/labGeneration.repository';
 import { conversationRepository } from '../repositories/conversation.repository';
 
@@ -21,7 +22,12 @@ const labContentSchema = z.object({
 
 export type LabContent = z.infer<typeof labContentSchema>;
 
-const llm = new ChatOpenAI({ model: 'gpt-4o', maxTokens: 2000 }).withStructuredOutput(labContentSchema)
+type LabEvent =
+  | { type: 'lab-delta'; partial: unknown }
+  | { type: 'lab-done'; labGenerationId: string }
+  | { type: 'starter-code-start' }
+  | { type: 'starter-code-failed' };
+
 
 export function formatLabAsMarkdown(content: LabContent): string {
     const stepsMd = content.steps
@@ -34,28 +40,46 @@ export function formatLabAsMarkdown(content: LabContent): string {
 }
 
 export const labGenerationService = {
-    async generate(
+    async *generate(
         topicText: string,
         skillLevel: SkillLevel,
         environment: TargetEnvironment,
         conversationId: string,
         userId: string,
         starterCode: boolean,
-    ): Promise<void> {
-        const labContent = await llm.invoke(
+        abortSignal: AbortSignal,
+    ): AsyncGenerator<LabEvent> {
+        
+        const result = streamText({
+        model: openai('gpt-4o'),
+        output: Output.object({ schema: labContentSchema }),
+        maxOutputTokens: 2000,
+        abortSignal,
+        prompt:
             `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
             `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
             `Each step should have a title, a description, and optionally a shell code snippet to run.`,
-        )
+        });
+
+
+        for await (const partial of result.partialOutputStream) {
+            yield {type: 'lab-delta', partial}
+        }
+
+        //once full lab is resolved
+        const labContent = await result.output;
+
 
         let starterCodeContent = null
         if (starterCode) {
+            yield {type: 'starter-code-start'};
             try {
                 starterCodeContent = await starterCodeService.generate(
                     topicText, skillLevel, environment, labContent,
                 )
             } catch (error) {
                 console.error('[labs] starter code generation failed:', error)
+                yield {type: 'starter-code-failed'}
             }
         }
 
@@ -68,5 +92,7 @@ export const labGenerationService = {
 
         await conversationRepository.ensureConversation(conversationId, userId, labGeneration.id)
         await conversationRepository.addMessages(conversationId, null, formatLabAsMarkdown(labContent))
+
+        yield {type: 'lab-done', labGenerationId: labGeneration.id};
     },
 }

@@ -29,15 +29,35 @@ export const labGenerationController = {
             return res.status(400).json(parseResult.error.format());
         }
 
+        const controller = new AbortController();
+        res.on('close', () => {
+            if (!res.writableEnded) controller.abort();
+        })
+     
+        const { topic, skillLevel, environment, conversationId, starterCode } = parseResult.data;
+
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        res.flushHeaders();
+
+        // function to stream messages
+        const send = (event: unknown) => res.write(`data: ${JSON.stringify(event)}\n\n`)
+
         try {
-            const { topic, skillLevel, environment, conversationId, starterCode } = parseResult.data;
-            const result = await labGenerationService.generate(topic, skillLevel, environment, conversationId, req.user!.id, starterCode)
-            res.json(result)
+            for await (const event of labGenerationService.generate(
+                topic, skillLevel, environment, conversationId, req.user!.id, starterCode, controller.signal,
+            )) {
+                send(event);
+            }
+        } catch (error) {
+            console.error('[labs] error:', error);
+            send({ type: 'error', message: 'Something went wrong generating your lab' });
+        } finally {
+            res.end();
         }
-        catch (error) {
-            console.error('[labs] error:', error)
-            res.status(500).json({ message: 'Something went wrong' })
-        }
+
     },
 
     async downloadStarterCode(req: Request, res: Response) {
