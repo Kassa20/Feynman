@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { NotebookPen } from "lucide-react";
 import { ChatBot } from "@/components/chat/ChatBot";
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
 import {
@@ -29,8 +30,9 @@ export function HomePage() {
     <div className="relative flex h-full">
       <Link
         to="/notes"
-        className="absolute bottom-3 left-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-teal-300 bg-teal-100 px-3 py-2 text-sm font-semibold text-teal-900 hover:bg-teal-200 dark:border-teal-400/40 dark:bg-teal-500/15 dark:text-teal-200 dark:hover:bg-teal-500/25"
       >
+        <NotebookPen size={14} />
         Notes
       </Link>
       <ConversationSidebar />

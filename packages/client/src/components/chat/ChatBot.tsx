@@ -269,7 +269,7 @@ export const ChatBot = ({ onRegenerate }: Props) => {
           <Button
             type="button"
             onClick={onRegenerateClick}
-            className="rounded-xl"
+            className="rounded-xl bg-[#E50914] text-white hover:bg-[#c11119]"
           >
             Replace
           </Button>
@@ -292,9 +292,8 @@ export const ChatBot = ({ onRegenerate }: Props) => {
             {labParams && phase === "idle" && (
               <Button
                 type="button"
-                variant="outline"
                 onClick={onRegenerateClick}
-                className="rounded-xl"
+                className="rounded-xl bg-[#E50914] text-white hover:bg-[#c11119]"
               >
                 <RotateCcw className="size-4" />
                 Regenerate

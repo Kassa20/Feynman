@@ -25,10 +25,26 @@ export type LabGeneratorFormData = z.infer<typeof labGeneratorSchema>;
 const skillLevels: {
   value: LabGeneratorFormData["skillLevel"];
   label: string;
+  selected: string;
 }[] = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+  {
+    value: "beginner",
+    label: "Beginner",
+    selected:
+      "border-emerald-500 bg-emerald-100 text-emerald-900 dark:border-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-200",
+  },
+  {
+    value: "intermediate",
+    label: "Intermediate",
+    selected:
+      "border-amber-500 bg-amber-100 text-amber-900 dark:border-amber-400 dark:bg-amber-500/20 dark:text-amber-200",
+  },
+  {
+    value: "advanced",
+    label: "Advanced",
+    selected:
+      "border-rose-500 bg-rose-100 text-rose-900 dark:border-rose-400 dark:bg-rose-500/20 dark:text-rose-200",
+  },
 ];
 
 export type Prefill = {
@@ -86,7 +102,8 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
     >
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto">
         <div>
-          <div className="mb-2 text-sm font-semibold text-muted-foreground">
+          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <span className="size-2 rounded-sm bg-sky-500" aria-hidden />
             Topic
           </div>
           <Textarea
@@ -102,7 +119,8 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
         </div>
 
         <div>
-          <div className="mb-2 text-sm font-semibold text-muted-foreground">
+          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <span className="size-2 rounded-sm bg-amber-400" aria-hidden />
             Your skill level
           </div>
           <input type="hidden" {...register("skillLevel")} />
@@ -119,7 +137,7 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
                 className={cn(
                   "flex-1 rounded-xl border px-2 py-2.5 text-center text-sm font-semibold",
                   skillLevel === option.value
-                    ? "border-primary bg-primary text-primary-foreground"
+                    ? option.selected
                     : "border-border bg-background hover:bg-muted",
                 )}
               >
@@ -135,7 +153,8 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
         </div>
 
         <div>
-          <div className="mb-2 text-sm font-semibold text-muted-foreground">
+          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <span className="size-2 rounded-sm bg-emerald-500" aria-hidden />
             Target environment
           </div>
           <select
@@ -156,7 +175,8 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
               className="mt-0.5 size-4 shrink-0 accent-primary"
             />
             <span>
-              <span className="text-sm font-semibold text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                <span className="size-2 rounded-sm bg-orange-500" aria-hidden />
                 Generate starter code
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground/70">
@@ -171,7 +191,10 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
         <Button
           type="submit"
           disabled={!isValid}
-          className="w-56 self-center rounded-xl px-6 py-6"
+          className={cn(
+            "w-56 self-center rounded-xl px-6 py-6",
+            prefill && "bg-[#E50914] text-white hover:bg-[#c11119]",
+          )}
         >{prefill ? "Regenerate" : "Generate"}</Button>
       </div>
     </form>

@@ -12,10 +12,10 @@ export function AuthLayout({
   footer: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen w-full bg-white text-[#3d2622]">
-      <div className="hidden lg:flex w-95 shrink-0 flex-col justify-between bg-[#3d2622] p-10 text-white">
+    <div className="flex min-h-screen w-full bg-white text-[#3a352b]">
+      <div className="hidden lg:flex w-95 shrink-0 flex-col justify-between bg-[#202b45] p-10 text-white">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white font-bold text-[#3d2622]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#ffd935] font-bold text-[#3a352b]">
             L
           </div>
           <div className="text-[17px] font-bold">Lab Generator</div>
@@ -39,15 +39,15 @@ export function AuthLayout({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-95">
           <div className="mb-8">
-            <h1 className="mb-1.5 text-2xl font-bold text-[#3d2622]">
+            <h1 className="mb-1.5 text-2xl font-bold text-[#3a352b]">
               {title}
             </h1>
-            <p className="text-sm text-[#7a6560]">{subtitle}</p>
+            <p className="text-sm text-[#6b6455]">{subtitle}</p>
           </div>
 
           {children}
 
-          <div className="mt-6 text-center text-sm text-[#7a6560]">
+          <div className="mt-6 text-center text-sm text-[#6b6455]">
             {footer}
           </div>
         </div>
@@ -57,7 +57,7 @@ export function AuthLayout({
 }
 
 export const authInputClass =
-  "w-full rounded-xl border border-[#ffe0d9] bg-white px-3.5 py-2.5 text-sm text-[#3d2622] outline-none placeholder:text-[#b89a92] focus:border-[#00b894]";
+  "w-full rounded-xl border border-[#ddd4c4] bg-white px-3.5 py-2.5 text-sm text-[#3a352b] outline-none placeholder:text-[#a89c88] focus:border-[#2f6fce]";
 
 export function AuthField({
   label,
@@ -70,7 +70,7 @@ export function AuthField({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[12.5px] font-semibold text-[#7a6560]">
+      <span className="text-[12.5px] font-semibold text-[#6b6455]">
         {label}
       </span>
       {children}

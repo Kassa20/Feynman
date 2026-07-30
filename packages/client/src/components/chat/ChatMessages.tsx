@@ -74,8 +74,8 @@ export const ChatMessages = ({ messages }: Props) => {
             onCopy={onCopyMessage}
             className={`text-sm leading-relaxed rounded-[14px] border px-4 ${
               message.role === "user"
-                ? "rounded-br-lg border-primary-foreground/20 bg-primary py-2.5 text-primary-foreground self-end max-w-md dark:border-white/22 dark:bg-white/10 dark:text-[#ECEAF4]"
-                : "rounded-bl-lg border-border bg-muted py-3 text-foreground self-start max-w-2xl dark:border-white/6 dark:bg-[#14141D] dark:text-[#C9C7D6]"
+                ? "rounded-br-lg border-primary-foreground/20 bg-primary py-2.5 text-primary-foreground self-end max-w-md"
+                : "rounded-bl-lg border-border bg-muted py-3 text-foreground self-start max-w-2xl"
             }`}
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>

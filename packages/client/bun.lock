@@ -10,6 +10,7 @@
         "@fontsource-variable/inter": "^5.3.0",
         "@fontsource-variable/jetbrains-mono": "^5.3.0",
         "@fontsource-variable/quicksand": "^5.3.0",
+        "@fontsource/balsamiq-sans": "^5.3.0",
         "@hookform/resolvers": "^5.4.0",
         "@supabase/supabase-js": "^2.110.8",
         "@tailwindcss/vite": "^4.3.3",
@@ -152,6 +153,8 @@
     "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.3.0", "", {}, "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="],
 
     "@fontsource-variable/quicksand": ["@fontsource-variable/quicksand@5.3.0", "", {}, "sha512-EMyoXnGC0uIbjyHDB01MTJoQuODsMo7Q/4XLEwN97YJEeV1WIVFI0QBiW2exGnxvhnMHb+IwQ9E5QZDgGMWCHw=="],
+
+    "@fontsource/balsamiq-sans": ["@fontsource/balsamiq-sans@5.3.0", "", {}, "sha512-ofkLqr8IH+TVP3q385lkonHo5yrbn59jbax9sEknRcwpxP/yX+gDd+hufeGw3fcIaRVWDN2TdhTMFCjdvw8utA=="],
 
     "@hono/node-server": ["@hono/node-server@1.19.14", "", { "peerDependencies": { "hono": "^4" } }, "sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw=="],
 
