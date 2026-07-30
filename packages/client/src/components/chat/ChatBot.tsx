@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, RotateCcw } from "lucide-react";
 import { ChatInput, type ChatFormData } from "./ChatInput";
 import { api, authHeaders } from "@/lib/api";
 import { ChatMessages, type Message } from "./ChatMessages";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "../ui/button";
-import type { LabGeneratorFormData } from "../lab/LabGeneratorForm";
+import type { LabGeneratorFormData, Prefill } from "../lab/LabGeneratorForm";
 import type { DeepPartial } from "react-hook-form";
 import { StreamingLab } from "./StreamingLab";
 
@@ -19,21 +19,47 @@ export type LabContent = {
   steps: { title: string; description: string; code: string | null }[];
 };
 
+type LabParams = {
+  topic: string;
+  skillLevel: LabGeneratorFormData["skillLevel"];
+  environment: LabGeneratorFormData["environment"];
+  starterCode: boolean;
+};
+
 type MessagesResponse = {
   messages: Message[];
   starterCodeLabId: string | null;
+  labParams: LabParams | null;
 };
 
-export const ChatBot = () => {
+type Props = {
+  onRegenerate: (prefill: Prefill) => void;
+};
+
+export const ChatBot = ({ onRegenerate }: Props) => {
   const navigate = useNavigate();
   const { conversationId } = useParams<{ conversationId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [starterCodeLabId, setStarterCodeLabId] = useState<string | null>(null);
+  // Non-null only when a lab exists, so it doubles as the Regenerate button's
+  // visibility condition.
+  const [labParams, setLabParams] = useState<LabParams | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const location = useLocation();
-  const labData = location.state?.labData as LabGeneratorFormData | undefined;
+  // Captured once per instance. React Router keeps this on the browser history
+  // entry, so reading it live would let a page reload replay the generation —
+  // today a duplicate lab, and with `regenerate` set, a wiped conversation.
+  // The copy is also a stable reference, so the generate effect below can't
+  // re-fire or abort itself when location.state is cleared.
+  const [labData] = useState(
+    () => location.state?.labData as LabGeneratorFormData | undefined,
+  );
+  const [regenerate] = useState(() =>
+    Boolean((location.state as { regenerate?: boolean } | null)?.regenerate),
+  );
   const [streamingLab, setStreamingLab] =
     useState<DeepPartial<LabContent> | null>(null);
   const [phase, setPhase] = useState<"idle" | "lab" | "starter-code">("idle");
@@ -56,6 +82,15 @@ export const ChatBot = () => {
     containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight });
   }, [messages, streamingLab, phase]);
 
+  // The trigger above was captured before this runs, so erasing it here only
+  // stops a reload from replaying — it can't cancel the generation in flight.
+  useEffect(() => {
+    if (location.state) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (labData || !conversationId) return;
     api
@@ -63,6 +98,7 @@ export const ChatBot = () => {
       .then(({ data }) => {
         setMessages(data.messages);
         setStarterCodeLabId(data.starterCodeLabId);
+        setLabParams(data.labParams);
       });
   }, [conversationId, labData]);
 
@@ -79,7 +115,7 @@ export const ChatBot = () => {
           "Content-Type": "application/json",
           ...(await authHeaders()),
         },
-        body: JSON.stringify({ ...labData, conversationId }),
+        body: JSON.stringify({ ...labData, conversationId, regenerate }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body)
@@ -119,6 +155,7 @@ export const ChatBot = () => {
             );
             setMessages(data.messages);
             setStarterCodeLabId(data.starterCodeLabId);
+            setLabParams(data.labParams);
           }
           if (event.type === "error") setError(event.message);
         }
@@ -133,7 +170,22 @@ export const ChatBot = () => {
       controller.abort();
       abortRef.current = null;
     };
-  }, [labData, conversationId]);
+  }, [labData, conversationId, regenerate]);
+
+  // Hands the original inputs up to HomePage, which feeds them to the generator
+  // form. Submitting that form is what actually starts the regeneration.
+  const onRegenerateClick = () => {
+    if (!labParams || !conversationId) return;
+    // A lab nobody has discussed is just the one ai message — nothing to lose,
+    // so don't nag. Otherwise the first click arms the prompt and the second,
+    // from "Replace", falls through.
+    if (messages.length > 1 && !confirming) {
+      setConfirming(true);
+      return;
+    }
+    setConfirming(false);
+    onRegenerate({ values: labParams, conversationId });
+  };
 
   const onDownload = async () => {
     if (!starterCodeLabId) return;
@@ -201,31 +253,65 @@ export const ChatBot = () => {
 
   return (
     <div className="flex h-full flex-col gap-3">
-      {starterCodeLabId && (
-        <div className="flex shrink-0 justify-end border-b border-border pb-3">
+      {confirming ? (
+        <div className="flex shrink-0 items-center gap-2 border-b border-border pb-3">
+          <p className="mr-auto text-sm text-muted-foreground">
+            Replacing this lab clears this chat and its notes.
+          </p>
           <Button
             type="button"
             variant="outline"
-            onClick={onDownload}
-            disabled={downloading}
+            onClick={() => setConfirming(false)}
             className="rounded-xl"
           >
-            <Download className="size-4" />
-            {downloading ? "Preparing…" : "Download starter code"}
+            Cancel
           </Button>
-        </div>
-      )}
-      {phase !== "idle" && (
-        <div className="flex shrink-0 justify-end border-b border-border pb-3">
           <Button
             type="button"
-            variant="outline"
-            onClick={() => abortRef.current?.abort()}
+            onClick={onRegenerateClick}
             className="rounded-xl"
           >
-            Stop
+            Replace
           </Button>
         </div>
+      ) : (
+        (starterCodeLabId || labParams || phase !== "idle") && (
+          <div className="flex shrink-0 justify-end gap-2 border-b border-border pb-3">
+            {starterCodeLabId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onDownload}
+                disabled={downloading}
+                className="rounded-xl"
+              >
+                <Download className="size-4" />
+                {downloading ? "Preparing…" : "Download starter code"}
+              </Button>
+            )}
+            {labParams && phase === "idle" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onRegenerateClick}
+                className="rounded-xl"
+              >
+                <RotateCcw className="size-4" />
+                Regenerate
+              </Button>
+            )}
+            {phase !== "idle" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => abortRef.current?.abort()}
+                className="rounded-xl"
+              >
+                Stop
+              </Button>
+            )}
+          </div>
+        )
       )}
       <div ref={containerRef} className="flex-1 overflow-y-auto">
         <ChatMessages messages={messages} />

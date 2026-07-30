@@ -8,6 +8,8 @@ import {
   type TargetEnvironment,
 } from '../repositories/labGeneration.repository';
 import { conversationRepository } from '../repositories/conversation.repository';
+import { notesRepository } from '../repositories/notes.repository';
+
 
 const labContentSchema = z.object({
     title: z.string(),
@@ -47,6 +49,7 @@ export const labGenerationService = {
         conversationId: string,
         userId: string,
         starterCode: boolean,
+        regenerate: boolean,
         abortSignal: AbortSignal,
     ): AsyncGenerator<LabEvent> {
         
@@ -90,7 +93,13 @@ export const labGenerationService = {
             labContent,
             starterCodeContent)
 
-        await conversationRepository.ensureConversation(conversationId, userId, labGeneration.id)
+        if (regenerate) {
+            await conversationRepository.replaceLab(conversationId, userId, labGeneration.id)
+            await notesRepository.deleteByConversation(conversationId, userId)
+        } else {
+            await conversationRepository.ensureConversation(conversationId, userId, labGeneration.id)
+        }
+
         await conversationRepository.addMessages(conversationId, null, formatLabAsMarkdown(labContent))
 
         yield {type: 'lab-done', labGenerationId: labGeneration.id};

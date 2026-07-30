@@ -14,6 +14,7 @@ const generateSchema = z.object({
     environment: z.enum(['macos', 'linux', 'windows']),
     conversationId: z.string().uuid(),
     starterCode: z.boolean().default(false),
+    regenerate: z.boolean().default(false),
 })
 
 const paramsSchema = z.object({ id: z.string().uuid() })
@@ -34,7 +35,7 @@ export const labGenerationController = {
             if (!res.writableEnded) controller.abort();
         })
      
-        const { topic, skillLevel, environment, conversationId, starterCode } = parseResult.data;
+        const { topic, skillLevel, environment, conversationId, starterCode, regenerate } = parseResult.data;
 
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -47,7 +48,7 @@ export const labGenerationController = {
 
         try {
             for await (const event of labGenerationService.generate(
-                topic, skillLevel, environment, conversationId, req.user!.id, starterCode, controller.signal,
+                topic, skillLevel, environment, conversationId, req.user!.id, starterCode, regenerate, controller.signal,
             )) {
                 send(event);
             }

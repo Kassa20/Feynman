@@ -54,5 +54,15 @@ export const notesRepository = {
             createdAt: row.created_at,
         }))
 
+    },
+
+    async deleteByConversation(conversationId: string, userId: string): Promise<void> {
+        const { error } = await supabase
+            .from('notes')
+            .delete()
+            .eq('conversation_id', conversationId)
+            .eq('user_id', userId)
+
+        if (error) throw new Error(`deleteByConversation failed: ${error.message}`)
     }
 }

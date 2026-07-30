@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -30,7 +31,17 @@ const skillLevels: {
   { value: "advanced", label: "Advanced" },
 ];
 
-export const LabGeneratorForm = () => {
+export type Prefill = {
+  values: LabGeneratorFormData;
+  conversationId: string;
+};
+
+type Props = {
+  prefill: Prefill | null;
+  onSubmitted: () => void;
+};
+
+export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
   const navigate = useNavigate();
   const {
     register,
@@ -46,10 +57,26 @@ export const LabGeneratorForm = () => {
 
   const skillLevel = watch("skillLevel");
 
+  // The inputs are uncontrolled, so the only way to fill them from outside is to
+  // hand react-hook-form the values. A fresh object arrives on every Regenerate
+  // click, which is what lets a second click discard edits from an abandoned one.
+  useEffect(() => {
+    if (prefill) reset(prefill.values);
+  }, [prefill, reset]);
+
   const onSubmit = (data: LabGeneratorFormData) => {
-    const conversationId = crypto.randomUUID();
+    // Reusing the id is what keeps a regeneration in the same window; a fresh
+    // lab mints a new one.
+    const conversationId = prefill?.conversationId ?? crypto.randomUUID();
+    const regenerate = Boolean(prefill);
     reset();
-    navigate(`/chat/${conversationId}`, { state: { labData: data } });
+    // Drop the prefill now it is spent, or the next submit would target this
+    // same conversation again.
+    onSubmitted();
+    navigate(`/chat/${conversationId}`, {
+      // runId forces a fresh ChatBot even though the URL is unchanged.
+      state: { labData: data, regenerate, runId: crypto.randomUUID() },
+    });
   };
 
   return (
@@ -145,7 +172,7 @@ export const LabGeneratorForm = () => {
           type="submit"
           disabled={!isValid}
           className="w-56 self-center rounded-xl px-6 py-6"
-        >Generate</Button>
+        >{prefill ? "Regenerate" : "Generate"}</Button>
       </div>
     </form>
   );
