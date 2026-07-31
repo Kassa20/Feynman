@@ -1,5 +1,6 @@
 import z from 'zod';
 import type { Request, Response } from 'express';
+import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 import { chatService, ConversationNotFoundError } from '../services/chat.service';
 
 const chatSchema = z.object({
@@ -35,21 +36,34 @@ export const chatController = {
 
         const send = (event: unknown) => res.write(`data: ${JSON.stringify(event)}\n\n`)
 
-        try {
-            for await (const event of chatService.sendMessage(
-                prompt, conversationId, req.user!.id, controller.signal,
-            )) {
-                send(event);
-            }
-        } catch (error) {
-            if (error instanceof ConversationNotFoundError) {
-                send({ type: 'error', message: 'Conversation not found' })
-            } else {
-                console.error('[chat] error:', error)
-                send({ type: 'error', message: 'Something went wrong' })
-            }
-        } finally {
-            res.end();
-        }
+        await propagateAttributes(
+            {
+                traceName: 'chat',
+                userId: req.user!.id,
+                sessionId: conversationId,
+                tags: ['chat'],
+            },
+            () => startActiveObservation('chat-request', async (span) => {
+                span.updateOtelSpanAttributes({ input: { prompt } });
+
+                try {
+                    for await (const event of chatService.sendMessage(
+                        prompt, conversationId, req.user!.id, controller.signal,
+                    )) {
+                        send(event);
+                    }
+                } catch (error) {
+                    if (error instanceof ConversationNotFoundError) {
+                        send({ type: 'error', message: 'Conversation not found' })
+                    } else {
+                        console.error('[chat] error:', error)
+                        span.updateOtelSpanAttributes({ level: 'ERROR', statusMessage: String(error) })
+                        send({ type: 'error', message: 'Something went wrong' })
+                    }
+                } finally {
+                    res.end();
+                }
+            }),
+        );
     }
 }

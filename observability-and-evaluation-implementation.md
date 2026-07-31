@@ -113,51 +113,68 @@ Your services are async generators driven by the controller's `for await` loop. 
 
 Update `packages/server/controllers/chat.controller.ts`:
 
+> **API note.** These snippets target `@langfuse/tracing@5.x`, which is what installs today. Older v4 docs and blog posts use `updateActiveTrace({ name, userId, sessionId, ... })` — that function no longer exists. v5 splits it in two: `propagateAttributes` (a *wrapper*, for trace-level identity) and `span.updateOtelSpanAttributes` / `updateActiveObservation` (for span-level input, output, and metadata).
+
 ```ts
-import { startActiveObservation, updateActiveTrace } from '@langfuse/tracing';
+import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 
 // ...inside sendMessage, replacing the existing try/catch/finally:
 
-await startActiveObservation('chat-request', async () => {
-    updateActiveTrace({
-        name: 'chat',
+await propagateAttributes(
+    {
+        traceName: 'chat',
         userId: req.user!.id,
         sessionId: conversationId,     // groups the lab + all its follow-up turns
-        input: { prompt },
         tags: ['chat'],
-    });
+    },
+    () => startActiveObservation('chat-request', async (span) => {
+        span.updateOtelSpanAttributes({ input: { prompt } });
 
-    try {
-        for await (const event of chatService.sendMessage(
-            prompt, conversationId, req.user!.id, controller.signal,
-        )) {
-            send(event);
+        try {
+            for await (const event of chatService.sendMessage(
+                prompt, conversationId, req.user!.id, controller.signal,
+            )) {
+                send(event);
+            }
+        } catch (error) {
+            if (error instanceof ConversationNotFoundError) {
+                send({ type: 'error', message: 'Conversation not found' });
+            } else {
+                console.error('[chat] error:', error);
+                span.updateOtelSpanAttributes({ level: 'ERROR', statusMessage: String(error) });
+                send({ type: 'error', message: 'Something went wrong' });
+            }
+        } finally {
+            res.end();
         }
-    } catch (error) {
-        if (error instanceof ConversationNotFoundError) {
-            send({ type: 'error', message: 'Conversation not found' });
-        } else {
-            console.error('[chat] error:', error);
-            updateActiveTrace({ metadata: { failed: true } });
-            send({ type: 'error', message: 'Something went wrong' });
-        }
-    } finally {
-        res.end();
-    }
-});
+    }),
+);
 ```
 
 Do the same in `labGeneration.controller.ts`, with the richer input you already have:
 
 ```ts
-updateActiveTrace({
-    name: 'lab-generation',
-    userId: req.user!.id,
-    sessionId: conversationId,
-    input: { topic, skillLevel, environment, starterCode },
-    tags: ['lab', regenerate ? 'regenerate' : 'initial'],
-});
+await propagateAttributes(
+    {
+        traceName: 'lab-generation',
+        userId: req.user!.id,
+        sessionId: conversationId,
+        tags: ['lab', regenerate ? 'regenerate' : 'initial'],
+    },
+    () => startActiveObservation('lab-request', async (span) => {
+        span.updateOtelSpanAttributes({
+            input: { topic, skillLevel, environment, starterCode },
+        });
+        // ...existing try/catch/finally
+    }),
+);
 ```
+
+### Why `propagateAttributes` wraps instead of sets
+
+Everything created inside the callback inherits `userId`, `sessionId`, and `tags` — including the nested LangChain generations from Phase 3. That's what makes the whole request land in one trace under one session without threading identity through every function signature.
+
+Note the constraint: `propagateAttributes`'s optional `metadata` field accepts **`Record<string, string>` only**, values capped at 200 characters. Non-string values are dropped with a warning. For richer or non-string metadata, use `updateActiveObservation({ metadata: {...} })`, which accepts `Record<string, unknown>`.
 
 Tagging `regenerate` is deliberate. Per the learnings doc, a regenerate is an implicit thumbs-down on the previous lab, and this tag makes that filterable from day one.
 
@@ -165,10 +182,14 @@ Tagging `regenerate` is deliberate. Per the learnings doc, a regenerate is an im
 
 While you're here, make the invisible things visible. In `labGeneration.service.ts`:
 
+These all use `updateActiveObservation` (not `propagateAttributes`), because they're recording facts about the current operation rather than identity for the whole trace — and because it accepts non-string values.
+
 ```ts
+import { updateActiveObservation } from '@langfuse/tracing';
+
 } catch (error) {
     console.error('[labs] starter code generation failed:', error)
-    updateActiveTrace({ metadata: { starterCodeFailed: true } })
+    updateActiveObservation({ metadata: { starterCodeFailed: true } })
     yield {type: 'starter-code-failed'}
 }
 ```
@@ -179,7 +200,7 @@ In `starterCode.service.ts`, record when the path filter actually removes someth
 const safeFiles = result.files.filter((f) => isSafePath(f.path))
 const dropped = result.files.length - safeFiles.length
 if (dropped > 0) {
-    updateActiveTrace({ metadata: { unsafePathsDropped: dropped } })
+    updateActiveObservation({ metadata: { unsafePathsDropped: dropped } })
 }
 return { ...result, files: safeFiles }
 ```
@@ -191,7 +212,7 @@ notesService
     .extractAndSave(prompt, responseText, userId, labGenerationId, conversationId)
     .catch((err) => {
         console.error('[notes] extraction failed:', err)
-        updateActiveTrace({ metadata: { notesExtractionFailed: true } })
+        updateActiveObservation({ metadata: { notesExtractionFailed: true } })
     })
 ```
 

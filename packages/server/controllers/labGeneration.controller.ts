@@ -3,6 +3,8 @@ import type { Request, Response } from 'express';
 import { zipSync, strToU8 } from 'fflate';                            
 import { labGenerationService } from '../services/labGeneration.service';
 import { labGenerationRepository } from '../repositories/labGeneration.repository';
+import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
+
 
 const generateSchema = z.object({
     topic: z
@@ -46,19 +48,34 @@ export const labGenerationController = {
         // function to stream messages
         const send = (event: unknown) => res.write(`data: ${JSON.stringify(event)}\n\n`)
 
-        try {
-            for await (const event of labGenerationService.generate(
-                topic, skillLevel, environment, conversationId, req.user!.id, starterCode, regenerate, controller.signal,
-            )) {
-                send(event);
-            }
-        } catch (error) {
-            console.error('[labs] error:', error);
-            send({ type: 'error', message: 'Something went wrong generating your lab' });
-        } finally {
-            res.end();
-        }
+        await propagateAttributes(
+            {
+                traceName: 'lab-generation',
+                userId: req.user!.id,
+                sessionId: conversationId,
+                tags: ['lab', regenerate ? 'regenerate' : 'initial'],
+            },
+            () => startActiveObservation('lab-request', async (span) => {
+                span.updateOtelSpanAttributes({
+                    input: {topic, skillLevel, environment, starterCode },
+                })
 
+                try {
+                    for await (const event of labGenerationService.generate(
+                        topic, skillLevel, environment, conversationId, req.user!.id, starterCode, regenerate, controller.signal,
+                    )) {
+                        send(event);
+                    }
+                } catch (error) {
+                    console.error('[labs] error:', error);
+                    span.updateOtelSpanAttributes({ level: 'ERROR', statusMessage: String(error) })
+                    send({ type: 'error', message: 'Something went wrong generating your lab' });
+                } finally {
+                    res.end();
+                }
+
+            })
+        )
     },
 
     async downloadStarterCode(req: Request, res: Response) {

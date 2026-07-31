@@ -9,6 +9,8 @@ import {
 } from '../repositories/labGeneration.repository';
 import { conversationRepository } from '../repositories/conversation.repository';
 import { notesRepository } from '../repositories/notes.repository';
+import { updateActiveObservation } from '@langfuse/tracing';
+
 
 
 const labContentSchema = z.object({
@@ -82,6 +84,7 @@ export const labGenerationService = {
                 )
             } catch (error) {
                 console.error('[labs] starter code generation failed:', error)
+                updateActiveObservation({ metadata: { starterCodeFailed: true } })
                 yield {type: 'starter-code-failed'}
             }
         }

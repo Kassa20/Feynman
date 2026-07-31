@@ -1,7 +1,10 @@
 import { ChatOpenAI } from '@langchain/openai';
 import z from 'zod';
 import { notesRepository, type NoteGenerationResult } from '../repositories/notes.repository';
+import { CallbackHandler } from '@langfuse/langchain';
 
+
+const langfuseHandler = new CallbackHandler();
 
 const noteSchema = z.object({
     shouldSave: z.boolean(),
@@ -27,6 +30,7 @@ export const notesService = {
             `(set shouldSave to false for small talk, acknowledgements, or trivial exchanges). ` +
             `If it should be saved, write a short title (max 8 words) and a concise note ` +
             `(2-4 sentences) that distills the explanation for later review.`,
+            { callbacks: [langfuseHandler], runName: 'extract-note' },
         )
 
         if (!result.shouldSave) return

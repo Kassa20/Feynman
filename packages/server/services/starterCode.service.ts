@@ -2,7 +2,9 @@ import { ChatOpenAI } from '@langchain/openai';
 import z from 'zod';
 import type { SkillLevel, TargetEnvironment } from '../repositories/labGeneration.repository';
 import type { LabContent } from './labGeneration.service';
+import { CallbackHandler } from '@langfuse/langchain';
 
+const langfuseHandler = new CallbackHandler();
 
 const starterCodeSchema = z.object({
     language: z.string(),
@@ -57,6 +59,7 @@ export const starterCodeService = {
             `- Always include a README.md with the exact install and run commands for ${environment}.\n` +
             `- Use relative paths only. No leading slash, no "..", no absolute paths.\n` +
             `- Keep it under 8 files.`,
+            { callbacks: [langfuseHandler], runName: 'generate-starter-code' },
         )
 
         return { ...result, files: result.files.filter((f) => isSafePath(f.path))}

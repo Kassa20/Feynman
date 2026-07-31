@@ -2,6 +2,7 @@ import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { conversationRepository } from '../repositories/conversation.repository';
 import { notesService } from './notes.service';
+import { updateActiveObservation } from '@langfuse/tracing';
 
 
 const SYSTEM_PROMPT = `You are a study assistant that helps students
@@ -58,7 +59,9 @@ export const chatService = {
         if (labGenerationId) {
             notesService
                 .extractAndSave(prompt, responseText, userId, labGenerationId, conversationId)
-                .catch((err) => console.error('[notes] extraction failed:', err))
+                .catch((err) => {
+                    console.error('[notes] extraction failed:', err)
+                })
         }
 
         yield { type: 'chat-done' };
