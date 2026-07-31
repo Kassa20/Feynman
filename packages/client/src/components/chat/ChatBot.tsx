@@ -37,19 +37,12 @@ export const ChatBot = ({ onRegenerate }: Props) => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [starterCodeLabId, setStarterCodeLabId] = useState<string | null>(null);
-  // Non-null only when a lab exists, so it doubles as the Regenerate button's
-  // visibility condition.
   const [labParams, setLabParams] = useState<LabParams | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const location = useLocation();
-  // Captured once per instance. React Router keeps this on the browser history
-  // entry, so reading it live would let a page reload replay the generation —
-  // today a duplicate lab, and with `regenerate` set, a wiped conversation.
-  // The copy is also a stable reference, so the generate effect below can't
-  // re-fire or abort itself when location.state is cleared.
   const [labData] = useState(
     () => location.state?.labData as LabGeneratorFormData | undefined,
   );
@@ -65,15 +58,9 @@ export const ChatBot = ({ onRegenerate }: Props) => {
   const [takeNotes, setTakeNotes] = useState(false);
   const chatAbortRef = useRef<AbortController | null>(null);
 
-  // Autoscroll: stay pinned to the bottom while the user hasn't scrolled up,
-  // and follow every new source of content — persisted messages, streaming
-  // lab deltas, and the starter-code status line all live in this container.
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
 
-  // Tracks pin state from the user's own scrolling, ahead of any content
-  // change — checking it after new content lands would measure the gap
-  // against a scrollHeight that already grew, falsely reading as "scrolled up".
   const onScroll = () => {
     const el = containerRef.current;
     if (!el) return;
@@ -90,13 +77,10 @@ export const ChatBot = ({ onRegenerate }: Props) => {
     return () => chatAbortRef.current?.abort();
   }, []);
 
-  // The trigger above was captured before this runs, so erasing it here only
-  // stops a reload from replaying — it can't cancel the generation in flight.
   useEffect(() => {
     if (location.state) {
       navigate(location.pathname, { replace: true, state: null });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -180,13 +164,14 @@ export const ChatBot = ({ onRegenerate }: Props) => {
     };
   }, [labData, conversationId, regenerate]);
 
+
+
+  
   // Hands the original inputs up to HomePage, which feeds them to the generator
   // form. Submitting that form is what actually starts the regeneration.
   const onRegenerateClick = () => {
     if (!labParams || !conversationId) return;
-    // A lab nobody has discussed is just the one ai message — nothing to lose,
-    // so don't nag. Otherwise the first click arms the prompt and the second,
-    // from "Replace", falls through.
+
     if (messages.length > 1 && !confirming) {
       setConfirming(true);
       return;
@@ -195,6 +180,8 @@ export const ChatBot = ({ onRegenerate }: Props) => {
     onRegenerate({ values: labParams, conversationId });
   };
 
+
+  // * download code button logic
   const onDownload = async () => {
     if (!starterCodeLabId) return;
     setDownloading(true);
@@ -226,6 +213,12 @@ export const ChatBot = ({ onRegenerate }: Props) => {
     }
   };
 
+
+  /*
+   * chat logic
+   * when a chat is submitted, get the llm response as a stream of text
+   * requires decoding the bytes coming in from the network
+   */
   const onSubmit = async ({ prompt }: ChatFormData) => {
     const {
       data: { session },
