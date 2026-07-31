@@ -109,6 +109,28 @@ export const conversationRepository = {
         if (deleteError) throw new Error(`replaceLab failed: ${deleteError.message}`)
     },
 
+    async deleteConversation(conversationId: string, userId: string): Promise<boolean> {
+        // Notes outlive their conversation, and the FK is NO ACTION, so unlink before deleting.
+        const { error: unlinkError } = await supabase
+            .from('notes')
+            .update({ conversation_id: null })
+            .eq('conversation_id', conversationId)
+            .eq('user_id', userId)
+
+        if (unlinkError) throw new Error(`deleteConversation failed: ${unlinkError.message}`)
+
+        const { data, error } = await supabase
+            .from('conversations')
+            .delete()
+            .eq('id', conversationId)
+            .eq('user_id', userId)
+            .select('id')
+            .maybeSingle()
+
+        if (error) throw new Error(`deleteConversation failed: ${error.message}`)
+        return Boolean(data)
+    },
+
     async getLabGenerationId(conversationId: string, userId: string): Promise<string | null> {
         const { data, error } = await supabase
             .from('conversations')

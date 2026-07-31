@@ -17,6 +17,7 @@ router.get('/', (req: Request, res: Response) => {
 router.post('/api/chat', requireAuth, chatController.sendMessage);
 router.get('/api/conversations', requireAuth, conversationController.list);
 router.get('/api/conversations/:id/messages', requireAuth, conversationController.getMessages);
+router.delete('/api/conversations/:id', requireAuth, conversationController.deleteConversation);
 router.get('/api/notes', requireAuth, notesController.listNotes);
 router.get('/api/labs/:id/starter-code', requireAuth, labGenerationController.downloadStarterCode)
 router.post('/api/labs/generate', requireAuth, labGenerationController.generate);

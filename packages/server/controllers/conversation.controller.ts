@@ -35,5 +35,24 @@ export const conversationController = {
             console.error('[conversations] error:', error)
             res.status(500).json({ message: 'Something went wrong' })
         }
+    },
+
+    async deleteConversation(req: Request, res: Response) {
+        const parseResult = paramsSchema.safeParse(req.params);
+        if (!parseResult.success) {
+            return res.status(400).json(parseResult.error.format());
+        }
+
+        try {
+            const deleted = await conversationRepository.deleteConversation(parseResult.data.id, req.user!.id);
+            if (!deleted) {
+                return res.status(404).json({ message: 'Conversation not found' })
+            }
+            res.status(204).send()
+        }
+        catch (error) {
+            console.error('[conversations] error:', error)
+            res.status(500).json({ message: 'Something went wrong' })
+        }
     }
 }

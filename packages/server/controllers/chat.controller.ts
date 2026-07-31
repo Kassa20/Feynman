@@ -10,6 +10,7 @@ const chatSchema = z.object({
         .min(1, { message: 'Prompt cannot be empty'})
         .max(1000, {message: 'Prompt cannot exceed 1000 characters'}),
     conversationId: z.string().uuid(),
+    takeNotes: z.boolean().default(false),
 })
 
 export const chatController = {
@@ -26,7 +27,7 @@ export const chatController = {
             if (!res.writableEnded) controller.abort();
         })
 
-        const {prompt, conversationId} = parseResult.data;
+        const {prompt, conversationId, takeNotes} = parseResult.data;
 
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -48,7 +49,7 @@ export const chatController = {
 
                 try {
                     for await (const event of chatService.sendMessage(
-                        prompt, conversationId, req.user!.id, controller.signal,
+                        prompt, conversationId, req.user!.id, takeNotes, controller.signal,
                     )) {
                         send(event);
                     }

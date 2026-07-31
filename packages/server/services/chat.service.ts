@@ -25,6 +25,7 @@ export const chatService = {
         prompt: string,
         conversationId: string,
         userId: string,
+        takeNotes: boolean,
         abortSignal: AbortSignal,
     ): AsyncGenerator<ChatEvent> {
         const chatHistory = await conversationRepository.getMessages(conversationId, userId);
@@ -55,13 +56,15 @@ export const chatService = {
         const responseText = await result.text;
         await conversationRepository.addMessages(conversationId, null, responseText)
 
-        const labGenerationId = await conversationRepository.getLabGenerationId(conversationId, userId)
-        if (labGenerationId) {
-            notesService
-                .extractAndSave(prompt, responseText, userId, labGenerationId, conversationId)
-                .catch((err) => {
-                    console.error('[notes] extraction failed:', err)
-                })
+        if (takeNotes) {
+            const labGenerationId = await conversationRepository.getLabGenerationId(conversationId, userId)
+            if (labGenerationId) {
+                notesService
+                    .extractAndSave(prompt, responseText, userId, labGenerationId, conversationId)
+                    .catch((err) => {
+                        console.error('[notes] extraction failed:', err)
+                    })
+            }
         }
 
         yield { type: 'chat-done' };

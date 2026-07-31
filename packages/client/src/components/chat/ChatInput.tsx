@@ -1,7 +1,9 @@
 import { FaArrowUp } from 'react-icons/fa';
+import { NotebookPen } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { useForm } from 'react-hook-form';
+import { cn } from '@/lib/utils';
 
 export type ChatFormData = {
    prompt: string;
@@ -10,9 +12,18 @@ export type ChatFormData = {
 type Props = {
    onSubmit: (data: ChatFormData) => void;
    disabled?: boolean;
+   takeNotes: boolean;
+   onTakeNotesChange: (value: boolean) => void;
+   showTakeNotes: boolean;
 };
 
-export const ChatInput = ({ onSubmit, disabled = false }: Props) => {
+export const ChatInput = ({
+   onSubmit,
+   disabled = false,
+   takeNotes,
+   onTakeNotesChange,
+   showTakeNotes,
+}: Props) => {
    const { register, handleSubmit, reset, formState } = useForm<ChatFormData>();
 
    const submit = handleSubmit((data) => {
@@ -30,7 +41,7 @@ export const ChatInput = ({ onSubmit, disabled = false }: Props) => {
       <form
          onSubmit={submit}
          onKeyDown={handleKeyDown}
-         className="flex flex-col gap-2 items-end border border-border bg-card p-4 rounded-3xl w-full max-w-4xl"
+         className="flex flex-col gap-2 border border-border bg-card p-4 rounded-3xl w-full max-w-4xl"
       >
          <Textarea
             autoFocus
@@ -43,13 +54,47 @@ export const ChatInput = ({ onSubmit, disabled = false }: Props) => {
             placeholder="Ask anything..."
             maxLength={1000}
          />
-         <Button
-            disabled={!formState.isValid || disabled}
-            type="submit"
-            className="rounded-full w-9 h-9"
-         >
-            <FaArrowUp />
-         </Button>
+         <div className="flex w-full items-center justify-between">
+            {showTakeNotes ? (
+               <button
+                  type="button"
+                  role="switch"
+                  aria-checked={takeNotes}
+                  onClick={() => onTakeNotesChange(!takeNotes)}
+                  className={cn(
+                     'flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold',
+                     takeNotes
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-background text-muted-foreground hover:bg-muted',
+                  )}
+               >
+                  <NotebookPen className="size-4" />
+                  Take notes
+                  <span
+                     className={cn(
+                        'flex h-4 w-7 items-center rounded-full p-0.5',
+                        takeNotes ? 'bg-primary' : 'bg-muted',
+                     )}
+                  >
+                     <span
+                        className={cn(
+                           'size-3 rounded-full bg-background transition-transform',
+                           takeNotes && 'translate-x-3',
+                        )}
+                     />
+                  </span>
+               </button>
+            ) : (
+               <span />
+            )}
+            <Button
+               disabled={!formState.isValid || disabled}
+               type="submit"
+               className="rounded-full w-9 h-9"
+            >
+               <FaArrowUp />
+            </Button>
+         </div>
       </form>
    );
 };

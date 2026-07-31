@@ -62,6 +62,7 @@ export const ChatBot = ({ onRegenerate }: Props) => {
   const abortRef = useRef<AbortController | null>(null);
   const [streamingReply, setStreamingReply] = useState<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [takeNotes, setTakeNotes] = useState(false);
   const chatAbortRef = useRef<AbortController | null>(null);
 
   // Autoscroll: stay pinned to the bottom while the user hasn't scrolled up,
@@ -249,7 +250,7 @@ export const ChatBot = ({ onRegenerate }: Props) => {
           "Content-Type": "application/json",
           ...(await authHeaders()),
         },
-        body: JSON.stringify({ prompt, conversationId }),
+        body: JSON.stringify({ prompt, conversationId, takeNotes }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body)
@@ -385,7 +386,13 @@ export const ChatBot = ({ onRegenerate }: Props) => {
         )}
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <ChatInput onSubmit={onSubmit} disabled={sendingMessage} />
+      <ChatInput
+        onSubmit={onSubmit}
+        disabled={sendingMessage}
+        takeNotes={takeNotes}
+        onTakeNotesChange={setTakeNotes}
+        showTakeNotes={!!labParams}
+      />
     </div>
   );
 };
