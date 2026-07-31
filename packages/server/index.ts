@@ -1,4 +1,4 @@
-
+import './lib/instrumentation';
 import router from './routes';
 
 
