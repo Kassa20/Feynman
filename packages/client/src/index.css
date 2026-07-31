@@ -55,7 +55,7 @@
    paper white + ink, highlighter-yellow primary, tan secondary, sky accent.
    Dark mode is the blueprint version: deep navy ink, same hues on top. */
 :root {
-    --background: oklch(0.985 0.016 95);
+    --background: oklch(0.985 0.002 247.839);
     --foreground: oklch(0.24 0.02 75);
     --card: oklch(0.995 0.008 95);
     --card-foreground: oklch(0.24 0.02 75);
@@ -79,7 +79,7 @@
     --chart-4: oklch(0.63 0.19 35);
     --chart-5: oklch(0.65 0.11 195);
     --radius: 0.625rem;
-    --sidebar: oklch(0.96 0.035 95);
+    --sidebar: oklch(0.985 0.002 247.839);
     --sidebar-foreground: oklch(0.24 0.02 75);
     --sidebar-primary: oklch(0.55 0.16 245);
     --sidebar-primary-foreground: oklch(0.985 0.016 95);

@@ -20,17 +20,36 @@ export const chatController = {
             }
         }
 
+        const controller = new AbortController();
+        res.on('close', () => {
+            if (!res.writableEnded) controller.abort();
+        })
+
+        const {prompt, conversationId} = parseResult.data;
+
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        res.flushHeaders();
+
+        const send = (event: unknown) => res.write(`data: ${JSON.stringify(event)}\n\n`)
+
         try {
-            const {prompt, conversationId} = parseResult.data;
-            const response = await chatService.sendMessage(prompt, conversationId, req.user!.id)
-            res.json({message: response.message})
-        }
-        catch (error) {
-            if (error instanceof ConversationNotFoundError) {
-                return res.status(404).json({ message: 'Conversation not found' })
+            for await (const event of chatService.sendMessage(
+                prompt, conversationId, req.user!.id, controller.signal,
+            )) {
+                send(event);
             }
-            console.error('[chat] error:', error)
-            res.status(500).json({ message: 'Something went wrong' })
+        } catch (error) {
+            if (error instanceof ConversationNotFoundError) {
+                send({ type: 'error', message: 'Conversation not found' })
+            } else {
+                console.error('[chat] error:', error)
+                send({ type: 'error', message: 'Something went wrong' })
+            }
+        } finally {
+            res.end();
         }
     }
 }

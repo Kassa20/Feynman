@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { NotebookPen, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/UserMenu";
 
 type Conversation = {
   id: string;
@@ -68,6 +69,16 @@ export const ConversationSidebar = () => {
             <span className="truncate">{conversation.title}</span>
           </Link>
         ))}
+      </div>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-sidebar-border pt-3">
+        <Link
+          to="/notes"
+          className="flex items-center gap-1.5 rounded-full border border-teal-300 bg-teal-100 px-3 py-2 text-sm font-semibold text-teal-900 hover:bg-teal-200 dark:border-teal-400/40 dark:bg-teal-500/15 dark:text-teal-200 dark:hover:bg-teal-500/25"
+        >
+          <NotebookPen size={14} />
+          Notes
+        </Link>
+        <UserMenu />
       </div>
     </div>
   );

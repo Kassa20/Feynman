@@ -121,6 +121,13 @@ export const conversationRepository = {
         return data?.lab_generation_id ?? null
     },
 
+    async addUserMessage(conversationId: string, content: string): Promise<void> {
+        const { error } = await supabase
+            .from('messages')
+            .insert({ conversation_id: conversationId, role: 'user', content })
+        if (error) throw new Error(`addUserMessage failed: ${error.message}`)
+    },
+
     async addMessages(
         conversationId: string,
         humanText: string | null,

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, RotateCcw } from "lucide-react";
 import { ChatInput, type ChatFormData } from "./ChatInput";
 import { api, authHeaders } from "@/lib/api";
@@ -9,10 +9,6 @@ import { Button } from "../ui/button";
 import type { LabGeneratorFormData, Prefill } from "../lab/LabGeneratorForm";
 import type { DeepPartial } from "react-hook-form";
 import { StreamingLab } from "./StreamingLab";
-
-type ChatResponse = {
-  message: string;
-};
 
 export type LabContent = {
   title: string;
@@ -64,6 +60,9 @@ export const ChatBot = ({ onRegenerate }: Props) => {
     useState<DeepPartial<LabContent> | null>(null);
   const [phase, setPhase] = useState<"idle" | "lab" | "starter-code">("idle");
   const abortRef = useRef<AbortController | null>(null);
+  const [streamingReply, setStreamingReply] = useState<string | null>(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const chatAbortRef = useRef<AbortController | null>(null);
 
   // Autoscroll: stay pinned to the bottom while the user hasn't scrolled up,
   // and follow every new source of content — persisted messages, streaming
@@ -71,16 +70,24 @@ export const ChatBot = ({ onRegenerate }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
 
-  useLayoutEffect(() => {
+  // Tracks pin state from the user's own scrolling, ahead of any content
+  // change — checking it after new content lands would measure the gap
+  // against a scrollHeight that already grew, falsely reading as "scrolled up".
+  const onScroll = () => {
     const el = containerRef.current;
     if (!el) return;
     pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  });
+  };
 
   useEffect(() => {
     if (!pinnedRef.current) return;
     containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight });
-  }, [messages, streamingLab, phase]);
+  }, [messages, streamingLab, streamingReply, phase]);
+
+  // Aborts an in-flight chat stream if the component unmounts mid-reply.
+  useEffect(() => {
+    return () => chatAbortRef.current?.abort();
+  }, []);
 
   // The trigger above was captured before this runs, so erasing it here only
   // stops a reload from replaying — it can't cancel the generation in flight.
@@ -229,19 +236,71 @@ export const ChatBot = ({ onRegenerate }: Props) => {
 
     setError(null);
     setMessages((prev) => [...prev, { content: prompt, role: "user" }]);
+    setSendingMessage(true);
+    setStreamingReply("");
+
+    const controller = new AbortController();
+    chatAbortRef.current = controller;
 
     try {
-      const { data } = await api.post<ChatResponse>("/api/chat", {
-        prompt,
-        conversationId,
+      const response = await fetch(`/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await authHeaders()),
+        },
+        body: JSON.stringify({ prompt, conversationId }),
+        signal: controller.signal,
       });
+      if (!response.ok || !response.body)
+        throw new Error(`Request failed: ${response.status}`);
 
-      setMessages((prev) => [...prev, { content: data.message, role: "ai" }]);
-    } catch {
-      setMessages((prev) => prev.slice(0, -1));
-      setError("Something went wrong sending your message. Please try again.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let reply = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() ?? "";
+
+        for (const frame of frames) {
+          if (!frame.startsWith("data: ")) continue;
+          const event = JSON.parse(frame.slice(6));
+
+          if (event.type === "chat-delta") {
+            reply += event.text;
+            setStreamingReply(reply);
+          }
+          if (event.type === "chat-done") {
+            setMessages((prev) => [...prev, { content: reply, role: "ai" }]);
+            setStreamingReply(null);
+          }
+          if (event.type === "error") throw new Error(event.message);
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setMessages((prev) => prev.slice(0, -1));
+        setError(
+          "Something went wrong sending your message. Please try again.",
+        );
+      }
+      setStreamingReply(null);
+    } finally {
+      setSendingMessage(false);
+      chatAbortRef.current = null;
     }
   };
+
+  const displayMessages =
+    streamingReply !== null
+      ? [...messages, { content: streamingReply, role: "ai" as const }]
+      : messages;
 
   if (!conversationId) {
     return (
@@ -312,8 +371,12 @@ export const ChatBot = ({ onRegenerate }: Props) => {
           </div>
         )
       )}
-      <div ref={containerRef} className="flex-1 overflow-y-auto">
-        <ChatMessages messages={messages} />
+      <div
+        ref={containerRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto"
+      >
+        <ChatMessages messages={displayMessages} />
         {streamingLab && <StreamingLab content={streamingLab} />}
         {phase === "starter-code" && (
           <p className="text-sm text-muted-foreground">
@@ -322,7 +385,7 @@ export const ChatBot = ({ onRegenerate }: Props) => {
         )}
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <ChatInput onSubmit={onSubmit} />
+      <ChatInput onSubmit={onSubmit} disabled={sendingMessage} />
     </div>
   );
 };
