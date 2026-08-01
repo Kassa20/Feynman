@@ -109,7 +109,8 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
           <Textarea
             {...register("topic")}
             placeholder="e.g. Set up a local Kubernetes cluster with a sample microservice"
-            className="min-h-24 resize-y"
+            className="min-h-24 max-h-64 resize-y"
+            maxLength={250}
           />
           {errors.topic && (
             <p className="mt-1 text-sm text-destructive">

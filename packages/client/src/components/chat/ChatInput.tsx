@@ -52,7 +52,7 @@ export const ChatInput = ({
             disabled={disabled}
             className="w-full border-0 shadow-none focus-visible:ring-0 resize-none"
             placeholder="Ask anything..."
-            maxLength={1000}
+            maxLength={500}
          />
          <div className="flex w-full items-center justify-between">
             {showTakeNotes ? (
@@ -61,19 +61,14 @@ export const ChatInput = ({
                   role="switch"
                   aria-checked={takeNotes}
                   onClick={() => onTakeNotesChange(!takeNotes)}
-                  className={cn(
-                     'flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold',
-                     takeNotes
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-background text-muted-foreground hover:bg-muted',
-                  )}
+                  className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:bg-muted"
                >
                   <NotebookPen className="size-4" />
                   Take notes
                   <span
                      className={cn(
                         'flex h-4 w-7 items-center rounded-full p-0.5',
-                        takeNotes ? 'bg-primary' : 'bg-muted',
+                        takeNotes ? 'bg-teal-500' : 'bg-gray-400',
                      )}
                   >
                      <span
