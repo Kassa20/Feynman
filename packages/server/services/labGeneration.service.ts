@@ -56,14 +56,23 @@ export const labGenerationService = {
     ): AsyncGenerator<LabEvent> {
         
         const result = streamText({
-        model: openai('gpt-4o'),
+        model: openai('gpt-5.6-luna'),
         output: Output.object({ schema: labContentSchema }),
-        maxOutputTokens: 2000,
+        maxOutputTokens: 10000,
         abortSignal,
         prompt:
             `Write a hands-on, step-by-step lab for the topic "${topicText}", ` +
             `targeting a ${skillLevel} skill level, for a user working on ${environment}. ` +
-            `Each step should have a title, a description, and optionally a shell code snippet to run.`,
+            `Each step should have a title, a description, and optionally a shell code snippet to run.` +
+            `**Minimum code that solves the problem. Nothing speculative.**
+            - No features beyond what was asked.
+            - No abstractions for single-use code.
+            - No "flexibility" or "configurability" that wasn't requested.
+            - No error handling for impossible scenarios.
+            - No over embellishing
+            - If you write 200 lines and it could be 50, rewrite it.
+
+            Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.`
         });
 
 
