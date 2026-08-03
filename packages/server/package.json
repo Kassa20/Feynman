@@ -17,6 +17,7 @@
     "@ai-sdk/openai": "^4.0.17",
     "@langchain/core": "^1.2.3",
     "@langchain/openai": "^1.5.5",
+    "@langchain/textsplitters": "^1.0.1",
     "@langfuse/client": "^5.9.1",
     "@langfuse/langchain": "^5.9.1",
     "@langfuse/otel": "^5.9.1",
@@ -28,6 +29,7 @@
     "express": "^5.2.1",
     "fflate": "^0.8.3",
     "langchain": "^1.5.3",
+    "pdf-parse": "^2.4.5",
     "zod": "^4.4.3"
   }
 }

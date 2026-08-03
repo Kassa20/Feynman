@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotesPage } from "./pages/NotesPage";
+import { QuizPage } from "./pages/QuizPage";
 import { RegisterPage } from "./pages/RegisterPage";
 
 function App() {
@@ -31,6 +32,14 @@ function App() {
         element={
           <ProtectedRoute>
             <NotesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quiz"
+        element={
+          <ProtectedRoute>
+            <QuizPage />
           </ProtectedRoute>
         }
       />

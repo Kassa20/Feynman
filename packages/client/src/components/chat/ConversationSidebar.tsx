@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { NotebookPen, Plus, Trash2 } from "lucide-react";
+import { ListChecks, NotebookPen, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,13 @@ export const ConversationSidebar = () => {
         >
           <NotebookPen size={14} />
           Notes
+        </Link>
+        <Link
+          to="/quiz"
+          className="flex items-center gap-1.5 rounded-full border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-900 hover:bg-sky-200 dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-200 dark:hover:bg-sky-500/25"
+        >
+          <ListChecks size={14} />
+          Quiz
         </Link>
         <UserMenu />
       </div>
