@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 import { TopicPicker } from "@/components/quiz/TopicPicker";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResult } from "@/components/quiz/QuizResult";
@@ -39,10 +39,13 @@ export function QuizPage() {
       setQuiz(started);
     } catch (caught) {
       // 404 here means the corpus has no coverage — a distinct, expected outcome
-      // rather than a failure, so it gets its own message.
+      // rather than a failure, so the server's message is shown verbatim.
+      const notCovered =
+        axios.isAxiosError(caught) && caught.response?.status === 404;
       setError(
-        axios.isAxiosError(caught) && caught.response?.status === 404
-          ? `No textbook content covers "${query}" yet. Try one of the suggested topics.`
+        notCovered
+          ? ((caught as AxiosError<{ message?: string }>).response?.data?.message ??
+              `No textbook content covers "${query}" yet. Try one of the suggested topics.`)
           : "Something went wrong generating your quiz.",
       );
     } finally {

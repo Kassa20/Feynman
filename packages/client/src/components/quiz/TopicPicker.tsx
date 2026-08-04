@@ -7,10 +7,8 @@ import type { Difficulty } from "@/lib/quizApi";
 // is a later refinement; a wrong chip is worse than no chip, so this list must be
 // updated alongside data/textbooks/manifest.json.
 const SUGGESTED_TOPICS = [
-  "Virtual memory and paging",
-  "CPU scheduling policies",
-  "Concurrency and locks",
-  "File system journaling",
+  "Distributed systems",
+  "Data structures and algorithms",
 ];
 
 const DIFFICULTIES: Difficulty[] = ["beginner", "intermediate", "advanced"];

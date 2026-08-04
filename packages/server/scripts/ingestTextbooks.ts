@@ -23,6 +23,10 @@ const splitter = new RecursiveCharacterTextSplitter({
     chunkOverlap: 200,
 });
 
+// PDF text layers often contain NUL bytes, which Postgres `text` columns cannot
+// store — PostgREST rejects them as "unsupported Unicode escape sequence".
+const stripNulls = (text: string): string => text.replace(/\u0000/g, '');
+
 async function loadPdf(filePath: string): Promise<ParsedPdf> {
     const parser = new PDFParse({ data: new Uint8Array(readFileSync(filePath)) });
     try {
@@ -34,11 +38,11 @@ async function loadPdf(filePath: string): Promise<ParsedPdf> {
         return {
             // LaTeX-produced PDFs often carry an empty or junk /Info Title, so the
             // filename is the fallback — it is what shows up in quiz citations.
-            title: info?.Title?.trim() || basename(filePath, '.pdf'),
-            author: info?.Author?.trim() || null,
+            title: stripNulls(info?.Title?.trim() || '') || basename(filePath, '.pdf'),
+            author: stripNulls(info?.Author?.trim() || '') || null,
             pages: pages.map(
                 (page) => new Document({
-                    pageContent: page.text,
+                    pageContent: stripNulls(page.text),
                     metadata: { page: page.num },
                 }),
             ),

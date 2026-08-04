@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 export function AuthLayout({
   title,
@@ -14,12 +15,12 @@ export function AuthLayout({
   return (
     <div className="flex min-h-screen w-full bg-white text-[#3a352b]">
       <div className="hidden lg:flex w-95 shrink-0 flex-col justify-between bg-[#202b45] p-10 text-white">
-        <div className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#ffd935] font-bold text-[#3a352b]">
             L
           </div>
           <div className="text-[17px] font-bold">Lab Generator</div>
-        </div>
+        </Link>
         <div>
           <div className="mb-3 text-2xl font-bold leading-snug">
             Describe a topic.
@@ -38,6 +39,12 @@ export function AuthLayout({
 
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-95">
+          <Link
+            to="/"
+            className="mb-6 inline-block text-sm font-semibold text-[#6b6455] hover:text-[#3a352b]"
+          >
+            ← Back to home
+          </Link>
           <div className="mb-8">
             <h1 className="mb-1.5 text-2xl font-bold text-[#3a352b]">
               {title}

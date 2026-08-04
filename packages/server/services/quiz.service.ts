@@ -21,6 +21,7 @@ const quizSchema = z.object({
 const RETRIEVAL_COUNT = 8;
 const MIN_SIMILARITY = 0.3;
 
+export class NoCoverageError extends Error {}
 export class SessionNotFoundError extends Error {}
 export class AlreadySubmittedError extends Error {}
 
@@ -77,7 +78,7 @@ export const quizService = {
 
 
             if (chunks.length === 0 || chunks[0]!.similarity < MIN_SIMILARITY) {
-                throw new Error(`No textbook coverage for "${query}"`);
+                throw new NoCoverageError(query);
             }
 
             const passages = chunks

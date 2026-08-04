@@ -3,6 +3,7 @@ import z from 'zod';
 import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 import {
     quizService,
+    NoCoverageError,
     SessionNotFoundError,
     AlreadySubmittedError,
 } from '../services/quiz.service';
@@ -42,6 +43,14 @@ export const quizController = {
                     const quiz = await quizService.generateQuiz(req.user!.id, query, difficulty, count);
                     res.json(quiz);
                 } catch (error) {
+                    // An uncovered topic is an expected outcome, not a failure — it
+                    // gets its own status so the client can say why.
+                    if (error instanceof NoCoverageError) {
+                        span.updateOtelSpanAttributes({ statusMessage: `no coverage: ${query}` });
+                        return res.status(404).json({
+                            message: `The current textbooks don't cover "${query}". Try a different topic.`,
+                        });
+                    }
                     console.error('[quiz] error:', error);
                     span.updateOtelSpanAttributes({ level: 'ERROR', statusMessage: String(error) });
                     res.status(500).json({ message: 'Something went wrong generating your quiz' });
