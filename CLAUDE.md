@@ -68,15 +68,28 @@ Key flows:
 - **Chat** (`services/chat.service.ts`): loads prior conversation history, streams a
   reply constrained to CS/software topics by the system prompt, persists both turns,
   and can fire-and-forget note extraction (`notes.service.ts`) when `takeNotes` is set.
+- **Quiz** (`services/quiz.service.ts`, `controllers/quiz.controller.ts`): RAG over
+  ingested textbooks. `textbookRepository` embeds the query and matches chunks in
+  Supabase (pgvector) above `MIN_SIMILARITY`; `NoCoverageError` (→ 404) signals a
+  topic the corpus doesn't cover. Generated questions are validated
+  (`isStructurallyValid`) and persisted via `quizRepository`; `quizJudge.service.ts`
+  fire-and-forget-samples a fraction of answer keys (`QUIZ_JUDGE_SAMPLE_RATE`) through
+  a second LLM pass as a correctness check, traced via Langfuse. Textbooks are
+  ingested offline by `scripts/ingestTextbooks.ts` (PDF → LangChain splitter →
+  OpenAI embeddings → `textbookRepository.replaceChunks`, delete-then-insert per
+  source file).
 
 ### Client (`packages/client`) — Vite + React Router
 
-- Routes defined in `src/App.tsx`; auth-gated pages wrapped in `ProtectedRoute`.
+- Routes defined in `src/App.tsx`; auth-gated pages wrapped in `ProtectedRoute`. The
+  `/` route renders `LandingPage` when logged out and `HomePage` when logged in.
 - `src/lib/api.ts` is an Axios instance that injects the Supabase session's
   `Authorization: Bearer <token>` header on every request via an interceptor.
 - `src/lib/AuthContext.tsx` + `src/lib/supabase.ts` manage Supabase auth state.
 - `components/chat/` holds the streaming chat/lab UI (`ChatBot`, `StreamingLab`,
   `ChatMessages`, `ChatInput`) that consumes the server's SSE-style generator events.
+- `components/quiz/` holds the quiz UI (`TopicPicker`, `QuizRunner`, `QuizResult`)
+  consumed by `pages/QuizPage.tsx`.
 
 ---
 
