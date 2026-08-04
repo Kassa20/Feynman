@@ -10,7 +10,6 @@
         "@langchain/openai": "^1.5.5",
         "@langchain/textsplitters": "^1.0.1",
         "@langfuse/client": "^5.9.1",
-        "@langfuse/langchain": "^5.9.1",
         "@langfuse/otel": "^5.9.1",
         "@langfuse/tracing": "^5.9.1",
         "@langfuse/vercel-ai-sdk": "^5.9.1",
@@ -68,8 +67,6 @@
     "@langfuse/client": ["@langfuse/client@5.9.1", "", { "dependencies": { "@langfuse/core": "^5.9.1", "@langfuse/tracing": "^5.9.1", "mustache": "^4.2.0" }, "peerDependencies": { "@opentelemetry/api": "^1.9.0" } }, "sha512-v9lb9GXc7ujmY2k97830MfIg+m1LQWkQNzXP+u2F3KwHVaEvD8zy4v1gLhbTkvemTggAx/tR+tv8BC9CeojTrA=="],
 
     "@langfuse/core": ["@langfuse/core@5.9.1", "", { "peerDependencies": { "@opentelemetry/api": "^1.9.0" } }, "sha512-KvyAskAO+2ixJwr9wy148ttR/Zn3oapvOJ2Br4Xcp6zhDpjSIIGB4jW/jkp53/KU9MyEHj0RSFPK/yKoxLC4KA=="],
-
-    "@langfuse/langchain": ["@langfuse/langchain@5.9.1", "", { "dependencies": { "@langfuse/core": "^5.9.1", "@langfuse/tracing": "^5.9.1" }, "peerDependencies": { "@langchain/core": ">=0.3.8", "@opentelemetry/api": "^1.9.0" } }, "sha512-Qv5Wn8EO2cRiVTBlb/zQwRhjD+93rVjD02in9L0+hyg9OBvc2rzqTfr8zKVDv9pgpsDfWD7Wm/sXyo7vGZmsTA=="],
 
     "@langfuse/otel": ["@langfuse/otel@5.9.1", "", { "dependencies": { "@langfuse/core": "^5.9.1" }, "peerDependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/core": "^2.0.1", "@opentelemetry/exporter-trace-otlp-http": ">=0.202.0 <1.0.0", "@opentelemetry/sdk-trace-base": "^2.0.1" } }, "sha512-viM5Qq/AIPZPXfO7YdSmDHxEDSrNU/MyGzuE9zKA6hGBII1iLowU+qL99O+TjnXqxoADqlNibhY2pg1/WTIPcw=="],
 

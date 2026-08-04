@@ -1,13 +1,11 @@
-import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
-import { CallbackHandler } from '@langfuse/langchain';
+import { openai } from '@ai-sdk/openai';
+import { embed, generateText, Output } from 'ai';
 import z from 'zod';
 import { textbookRepository } from '../repositories/textbook.repository';
 import { quizRepository, type StoredQuestion } from '../repositories/quiz.repository';
 import type { SkillLevel } from '../repositories/labGeneration.repository';
+import { judgeAnswerKeys } from './quizJudge.service';
 
-
-const langfuseHandler = new CallbackHandler();
-const embeddings = new OpenAIEmbeddings({model: 'text-embedding-3-small'})
 
 const quizSchema = z.object({
     questions: z.array(
@@ -19,9 +17,6 @@ const quizSchema = z.object({
         }),
     ),
 })
-
-const quizAgent = new ChatOpenAI({ model: 'gpt-5.6-luna', maxTokens: 4000 })
-    .withStructuredOutput(quizSchema);
 
 const RETRIEVAL_COUNT = 8;
 const MIN_SIMILARITY = 0.3;
@@ -73,7 +68,11 @@ export const quizService = {
             difficulty: SkillLevel,
             count: number,
         ): Promise<{ sessionId: string; questions: { question: string; choices: string[] }[] }> {
-            const queryEmbedding = await embeddings.embedQuery(query);
+            const { embedding: queryEmbedding } = await embed({
+                model: openai.embedding('text-embedding-3-small'),
+                value: query,
+                telemetry: { functionId: 'embed-quiz-query' },
+            });
             const chunks = await textbookRepository.matchChunks(queryEmbedding, RETRIEVAL_COUNT);
 
 
@@ -87,7 +86,12 @@ export const quizService = {
                 )
                 .join('\n\n---\n\n');
 
-            const result = await quizAgent.invoke(
+            const { output } = await generateText({
+                model: openai('gpt-5.6-luna'),
+                output: Output.object({ schema: quizSchema }),
+                maxOutputTokens: 10000,
+                telemetry: { functionId: 'generate-quiz' },
+                prompt:
                 `You are writing a ${difficulty}-level multiple-choice quiz on the topic "${query}".\n\n` +
                 `Write exactly ${count} questions using ONLY the passages below. Every question must be ` +
                 `answerable from these passages alone.\n\n` +
@@ -105,10 +109,9 @@ export const quizService = {
                 `Here are examples of the KIND of question to write. Copy their form, not their subject:\n\n` +
                 `${QUESTION_EXEMPLARS}\n\n` +
                 `Passages:\n\n${passages}`,
-                { callbacks: [langfuseHandler], runName: 'generate-quiz' },
-            );
+            });
 
-            const valid = result.questions.filter(isStructurallyValid);
+            const valid = output.questions.filter(isStructurallyValid);
 
             if (valid.length === 0) {
                 throw new Error('Model returned no structurally valid questions');
@@ -122,6 +125,12 @@ export const quizService = {
                 difficulty,
                 questions,
                 chunks.map((chunk) => chunk.id),
+            );
+
+            // Fire-and-forget. The user must not wait on the judge, which means a
+            // mis-keyed question still reaches this user — the point is finding out.
+            judgeAnswerKeys(questions).catch((error) =>
+                console.error('[quiz] answer-key judge failed:', error),
             );
 
             // Strip the key before it leaves the server. This is the whole point of

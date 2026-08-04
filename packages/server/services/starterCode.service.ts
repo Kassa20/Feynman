@@ -1,11 +1,8 @@
-import { ChatOpenAI } from '@langchain/openai';
+import { openai } from '@ai-sdk/openai';
+import { generateText, Output } from 'ai';
 import z from 'zod';
 import type { SkillLevel, TargetEnvironment } from '../repositories/labGeneration.repository';
 import type { LabContent } from './labGeneration.service';
-import { CallbackHandler } from '@langfuse/langchain';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-
-const langfuseHandler = new CallbackHandler();
 
 const starterCodeSchema = z.object({
     language: z.string(),
@@ -23,8 +20,6 @@ export type starterCode = z.infer<typeof starterCodeSchema>;
 const SYSTEM_PROMPT = `You are an expert computer science tutor that generates bare bone starter code\n.` +  
                        `You do not give direct code implementations, but generate starter code 
                        to ease the burden of having to create a new project manually.`
-
-const llm = new ChatOpenAI({model: 'gpt-5.6-luna', maxTokens: 20000}).withStructuredOutput(starterCodeSchema)
 
 
 function isSafePath(path: string): boolean {
@@ -47,10 +42,13 @@ export const starterCodeService = {
     ): Promise<starterCode> {
         const stepTitles = labContent.steps.map((s, i) => `${i + 1}. ${s.title}`).join('\n')
 
-        const result = await llm.invoke(
-            [
-                new SystemMessage(SYSTEM_PROMPT),
-                new HumanMessage(
+        const { output } = await generateText({
+            model: openai('gpt-5.6-luna'),
+            output: Output.object({ schema: starterCodeSchema }),
+            maxOutputTokens: 20000,
+            telemetry: { functionId: 'generate-starter-code' },
+            system: SYSTEM_PROMPT,
+            prompt:
                     `A learner is about to work through this hands-on lab:\n\n` +
                     `Title: ${labContent.title}\n` +
                     `Topic: ${topicText}\n` +
@@ -68,12 +66,9 @@ export const starterCodeService = {
                     `listing every dependency the lab needs, with pinned versions. Omit it only if the stack ` +
                     `genuinely has no dependencies.\n` +
                     `- Always include a README.md with the exact install and run commands for ${environment}.\n` +
-                    `- Use relative paths only. No leading slash, no "..", no absolute paths.\n`
-                )
-            ],
-            { callbacks: [langfuseHandler], runName: 'generate-starter-code' },
-        )
+                    `- Use relative paths only. No leading slash, no "..", no absolute paths.\n`,
+        })
 
-        return { ...result, files: result.files.filter((f) => isSafePath(f.path))}
+        return { ...output, files: output.files.filter((f) => isSafePath(f.path))}
     }
 }
