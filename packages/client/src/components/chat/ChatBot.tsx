@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, ListChecks, RotateCcw } from "lucide-react";
+import { Download, RotateCcw } from "lucide-react";
 import { ChatInput, type ChatFormData } from "./ChatInput";
 import { api, authHeaders } from "@/lib/api";
 import { ChatMessages, type Message } from "./ChatMessages";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "../ui/button";
 import type { LabGeneratorFormData, Prefill } from "../lab/LabGeneratorForm";
@@ -296,26 +296,9 @@ export const ChatBot = ({ onRegenerate }: Props) => {
       ? [...messages, { content: streamingReply, role: "ai" as const }]
       : messages;
 
-  // Always available, with or without a lab. When one exists its topic rides
-  // along so the quiz opens pre-filled with what the user just worked through.
-  const quizButton = (
-    <Button
-      variant="outline"
-      className="rounded-xl"
-      nativeButton={false}
-      render={<Link to="/quiz" state={{ topic: labParams?.topic }} />}
-    >
-      <ListChecks className="size-4" />
-      Quiz me
-    </Button>
-  );
-
   if (!conversationId) {
     return (
       <div className="flex h-full flex-col gap-3">
-        <div className="flex shrink-0 justify-end gap-2 border-b border-border pb-3">
-          {quizButton}
-        </div>
         <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
           Generate a lab to start a new conversation.
         </div>
@@ -360,7 +343,6 @@ export const ChatBot = ({ onRegenerate }: Props) => {
               {downloading ? "Preparing…" : "Download starter code"}
             </Button>
           )}
-          {quizButton}
           {labParams && phase === "idle" && (
             <Button
               type="button"
