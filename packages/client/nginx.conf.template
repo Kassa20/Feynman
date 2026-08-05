@@ -1,0 +1,28 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA fallback for react-router routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Lab/chat generation is streamed (SSE), so buffering must stay off.
+    location /api/ {
+        # proxy_pass via a variable so the upstream is re-resolved per request
+        # (Cloud Run rotates IPs); that in turn requires an explicit resolver.
+        resolver ${DNS_RESOLVER} valid=30s;
+        set $upstream ${API_UPSTREAM};
+        proxy_pass $upstream;
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${API_HOST};
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 600s;
+    }
+}
