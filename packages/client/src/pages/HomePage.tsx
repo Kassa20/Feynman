@@ -14,6 +14,9 @@ export function HomePage() {
   // the bridge that carries a regeneration request from one to the other.
   const [prefill, setPrefill] = useState<Prefill | null>(null);
   const [runId, setRunId] = useState("");
+  // Same bridge, opposite direction: lets the form lock its submit button while
+  // ChatBot has a lab in flight.
+  const [generating, setGenerating] = useState(false);
 
   const stateRunId = (location.state as { runId?: string } | null)?.runId;
   if (stateRunId && stateRunId !== runId) setRunId(stateRunId);
@@ -33,7 +36,13 @@ export function HomePage() {
           <div className="h-full w-full max-w-sm shrink-0">
             <LabGeneratorForm
               prefill={activePrefill}
-              onSubmitted={() => setPrefill(null)}
+              // Latched here, in the same batch as the submit, so the button is
+              // never briefly live between submit and ChatBot reporting in.
+              onSubmitted={() => {
+                setPrefill(null);
+                setGenerating(true);
+              }}
+              generating={generating}
             />
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
@@ -43,6 +52,7 @@ export function HomePage() {
               <ChatBot
                 key={`${conversationId}:${runId}`}
                 onRegenerate={setPrefill}
+                onGeneratingChange={setGenerating}
               />
             </div>
           </div>

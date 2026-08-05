@@ -67,9 +67,11 @@ export const labGenerationController = {
                         send(event);
                     }
                 } catch (error) {
-                    console.error('[labs] error:', error);
-                    span.updateOtelSpanAttributes({ level: 'ERROR', statusMessage: String(error) })
-                    send({ type: 'error', message: 'Something went wrong generating your lab' });
+                    if (!controller.signal.aborted) {
+                        console.error('[labs] error:', error);
+                        span.updateOtelSpanAttributes({ level: 'ERROR', statusMessage: String(error) })
+                        send({ type: 'error', message: 'Something went wrong generating your lab' });
+                    }
                 } finally {
                     res.end();
                 }

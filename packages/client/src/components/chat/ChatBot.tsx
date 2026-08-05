@@ -30,9 +30,10 @@ type MessagesResponse = {
 
 type Props = {
   onRegenerate: (prefill: Prefill) => void;
+  onGeneratingChange: (generating: boolean) => void;
 };
 
-export const ChatBot = ({ onRegenerate }: Props) => {
+export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
   const navigate = useNavigate();
   const { conversationId } = useParams<{ conversationId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -51,7 +52,12 @@ export const ChatBot = ({ onRegenerate }: Props) => {
   );
   const [streamingLab, setStreamingLab] =
     useState<DeepPartial<LabContent> | null>(null);
-  const [phase, setPhase] = useState<"idle" | "lab" | "starter-code">("idle");
+  // Seeded from labData rather than defaulting to "idle": arriving with labData
+  // means a generation starts this commit, and reporting "idle" first would blink
+  // the generator form back to enabled.
+  const [phase, setPhase] = useState<"idle" | "lab" | "starter-code">(
+    labData ? "lab" : "idle",
+  );
   const abortRef = useRef<AbortController | null>(null);
   const [streamingReply, setStreamingReply] = useState<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -60,6 +66,13 @@ export const ChatBot = ({ onRegenerate }: Props) => {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
+
+  const onStop = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setStreamingLab(null);
+    setPhase("idle");
+  };
 
   const onScroll = () => {
     const el = containerRef.current;
@@ -76,6 +89,17 @@ export const ChatBot = ({ onRegenerate }: Props) => {
   useEffect(() => {
     return () => chatAbortRef.current?.abort();
   }, []);
+
+  // The generator form is a sibling, so it can only learn a lab is in flight
+  // through HomePage. Reported on unmount too: regenerating remounts this
+  // component, and a stale `true` would leave the form locked forever.
+  useEffect(() => {
+    onGeneratingChange(phase !== "idle");
+  }, [phase, onGeneratingChange]);
+
+  useEffect(() => {
+    return () => onGeneratingChange(false);
+  }, [onGeneratingChange]);
 
   useEffect(() => {
     if (location.state) {
@@ -98,6 +122,15 @@ export const ChatBot = ({ onRegenerate }: Props) => {
     if (!labData || !conversationId) return;
     const controller = new AbortController();
     abortRef.current = controller;
+
+    // Only the run that still owns the signal may settle state. A superseded run
+    // (StrictMode's double-invoke, or a regeneration replacing this one) is
+    // aborted by its own cleanup, and must not reset a phase it no longer owns.
+    const settle = () => {
+      if (controller.signal.aborted) return;
+      setStreamingLab(null);
+      setPhase("idle");
+    };
 
     (async () => {
       setPhase("lab");
@@ -152,10 +185,15 @@ export const ChatBot = ({ onRegenerate }: Props) => {
           if (event.type === "error") setError(event.message);
         }
       }
+
+      // The stream can close without a lab-done (server error, or an abort the
+      // server acted on). Leaving phase set would lock the generator form.
+      settle();
     })().catch((err) => {
       if ((err as Error).name !== "AbortError") {
         setError("Something went wrong generating your lab.");
       }
+      settle();
     });
 
     return () => {
@@ -357,7 +395,7 @@ export const ChatBot = ({ onRegenerate }: Props) => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => abortRef.current?.abort()}
+              onClick={onStop}
               className="rounded-xl"
             >
               Stop

@@ -55,9 +55,14 @@ export type Prefill = {
 type Props = {
   prefill: Prefill | null;
   onSubmitted: () => void;
+  generating: boolean;
 };
 
-export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
+export const LabGeneratorForm = ({
+  prefill,
+  onSubmitted,
+  generating,
+}: Props) => {
   const navigate = useNavigate();
   const {
     register,
@@ -191,12 +196,18 @@ export const LabGeneratorForm = ({ prefill, onSubmitted }: Props) => {
       <div className="flex shrink-0 flex-col gap-2 pt-4">
         <Button
           type="submit"
-          disabled={!isValid}
+          disabled={!isValid || generating}
           className={cn(
             "w-56 self-center rounded-xl px-6 py-6",
             prefill && "bg-[#E50914] text-white hover:bg-[#c11119]",
           )}
-        >{prefill ? "Regenerate" : "Generate"}</Button>
+        >
+          {generating
+            ? "Generating lab…"
+            : prefill
+              ? "Regenerate"
+              : "Generate"}
+        </Button>
       </div>
     </form>
   );

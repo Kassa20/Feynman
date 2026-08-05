@@ -80,6 +80,10 @@ export const labGenerationService = {
             yield {type: 'lab-delta', partial}
         }
 
+        // An aborted stream ends silently rather than throwing, so bail out here
+        // instead of spending another LLM call and persisting a half-built lab.
+        if (abortSignal.aborted) return;
+
         //once full lab is resolved
         const labContent = await result.output;
 
@@ -89,14 +93,17 @@ export const labGenerationService = {
             yield {type: 'starter-code-start'};
             try {
                 starterCodeContent = await starterCodeService.generate(
-                    topicText, skillLevel, environment, labContent,
+                    topicText, skillLevel, environment, labContent, abortSignal,
                 )
             } catch (error) {
+                if (abortSignal.aborted) return;
                 console.error('[labs] starter code generation failed:', error)
                 updateActiveObservation({ metadata: { starterCodeFailed: true } })
                 yield {type: 'starter-code-failed'}
             }
         }
+
+        if (abortSignal.aborted) return;
 
         const labGeneration = await labGenerationRepository.create(
             topicText, 

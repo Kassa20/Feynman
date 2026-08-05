@@ -39,6 +39,7 @@ export const starterCodeService = {
         SkillLevel: string,
         environment: TargetEnvironment,
         labContent: LabContent,
+        abortSignal: AbortSignal,
     ): Promise<starterCode> {
         const stepTitles = labContent.steps.map((s, i) => `${i + 1}. ${s.title}`).join('\n')
 
@@ -46,6 +47,7 @@ export const starterCodeService = {
             model: openai('gpt-5.6-luna'),
             output: Output.object({ schema: starterCodeSchema }),
             maxOutputTokens: 20000,
+            abortSignal,
             telemetry: { functionId: 'generate-starter-code' },
             system: SYSTEM_PROMPT,
             prompt:
