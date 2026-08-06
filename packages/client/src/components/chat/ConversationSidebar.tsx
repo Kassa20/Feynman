@@ -4,6 +4,7 @@ import { ListChecks, NotebookPen, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { UserMenu } from "@/components/UserMenu";
 
 type Conversation = {
@@ -29,6 +30,7 @@ export const ConversationSidebar = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
     null,
   );
@@ -37,7 +39,8 @@ export const ConversationSidebar = () => {
   useEffect(() => {
     api
       .get<ConversationsResponse>("/api/conversations")
-      .then(({ data }) => setConversations(data.conversations));
+      .then(({ data }) => setConversations(data.conversations))
+      .finally(() => setIsLoading(false));
   }, [conversationId]);
 
   const onNewChat = () => {
@@ -71,7 +74,18 @@ export const ConversationSidebar = () => {
         <p className="shrink-0 px-1 text-xs text-[#E50914]">{deleteError}</p>
       )}
       <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
-        {conversations.map((conversation, index) =>
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 rounded-lg py-2 pr-9 pl-3"
+            >
+              <Skeleton className="size-2 shrink-0 rounded-full" />
+              <Skeleton className="h-4 w-full max-w-40" />
+            </div>
+          ))
+        ) : (
+          conversations.map((conversation, index) =>
           conversation.id === confirmingDeleteId ? (
             <div
               key={conversation.id}
@@ -127,6 +141,7 @@ export const ConversationSidebar = () => {
               </button>
             </div>
           ),
+          )
         )}
       </div>
       <div className="flex shrink-0 items-center justify-between gap-2 border-t border-sidebar-border pt-3">
