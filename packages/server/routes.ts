@@ -19,11 +19,11 @@ router.get('/api/conversations', requireAuth, conversationController.list);
 router.get('/api/conversations/:id/messages', requireAuth, conversationController.getMessages);
 router.get('/api/notes', requireAuth, notesController.listNotes);
 router.get('/api/labs/:id/starter-code', requireAuth, labGenerationController.downloadStarterCode)
+router.get('/api/quiz', requireAuth, quizController.list);
+router.get('/api/quiz/:id', requireAuth, quizController.getResult);
 
 router.post('/api/chat', requireAuth, chatController.sendMessage);
 router.post('/api/labs/generate', requireAuth, labGenerationController.generate);
-router.post('/api/quiz/start', requireAuth, quizController.start);
-router.post('/api/quiz/submit', requireAuth, quizController.submit);
 router.post('/api/quiz/start', requireAuth, quizController.start);
 router.post('/api/quiz/submit', requireAuth, quizController.submit);
 

@@ -21,6 +21,10 @@ const submitSchema = z.object({
     answers: z.array(z.number().int().min(0).max(3)).min(1).max(10),
 });
 
+const idParamSchema = z.object({
+    id: z.string().uuid(),
+});
+
 export const quizController = {
     async start(req: Request, res: Response) {
         const parseResult = startSchema.safeParse(req.body);
@@ -76,6 +80,34 @@ export const quizController = {
             }
             if (error instanceof AlreadySubmittedError) {
                 return res.status(409).json({ message: 'This quiz has already been submitted' });
+            }
+            console.error('[quiz] error:', error);
+            res.status(500).json({ message: 'Something went wrong' });
+        }
+    },
+
+    async list(req: Request, res: Response) {
+        try {
+            const quizzes = await quizService.listQuizzes(req.user!.id);
+            res.json({ quizzes });
+        } catch (error) {
+            console.error('[quiz] error:', error);
+            res.status(500).json({ message: 'Something went wrong loading your quizzes' });
+        }
+    },
+
+    async getResult(req: Request, res: Response) {
+        const parseResult = idParamSchema.safeParse(req.params);
+        if (!parseResult.success) {
+            return res.status(400).json(parseResult.error.format());
+        }
+
+        try {
+            const result = await quizService.getQuizResult(req.user!.id, parseResult.data.id);
+            res.json(result);
+        } catch (error) {
+            if (error instanceof SessionNotFoundError) {
+                return res.status(404).json({ message: 'Quiz not found' });
             }
             console.error('[quiz] error:', error);
             res.status(500).json({ message: 'Something went wrong' });

@@ -2,7 +2,7 @@ import { openai } from '@ai-sdk/openai';
 import { embed, generateText, Output } from 'ai';
 import z from 'zod';
 import { textbookRepository } from '../repositories/textbook.repository';
-import { quizRepository, type StoredQuestion } from '../repositories/quiz.repository';
+import { quizRepository, type StoredQuestion, type QuizListItem } from '../repositories/quiz.repository';
 import type { SkillLevel } from '../repositories/labGeneration.repository';
 import { judgeAnswerKeys } from './quizJudge.service';
 
@@ -178,6 +178,48 @@ export const quizService = {
         await quizRepository.recordResult(sessionId, score, total, answers);
 
         return { score, total, perQuestion };
+    },
+
+    async listQuizzes(userId: string): Promise<QuizListItem[]> {
+        return quizRepository.listSessions(userId);
+    },
+
+    async getQuizResult(
+        userId: string,
+        sessionId: string,
+    ): Promise<{
+        query: string;
+        difficulty: SkillLevel;
+        submittedAt: string;
+        score: number;
+        total: number;
+        perQuestion: {
+            question: string;
+            choices: string[];
+            selectedIndex: number | null;
+            correctIndex: number;
+            explanation: string;
+        }[];
+    }> {
+        const session = await quizRepository.getSessionWithResult(sessionId, userId);
+        if (!session) throw new SessionNotFoundError(sessionId);
+
+        const perQuestion = session.questions.map((question, index) => ({
+            question: question.question,
+            choices: question.choices,
+            selectedIndex: session.answers[index] ?? null,
+            correctIndex: question.correctIndex,
+            explanation: question.explanation,
+        }));
+
+        return {
+            query: session.query,
+            difficulty: session.difficulty,
+            submittedAt: session.submittedAt,
+            score: session.score,
+            total: session.total,
+            perQuestion,
+        };
     },
 }
 

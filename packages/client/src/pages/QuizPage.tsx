@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 import axios, { type AxiosError } from "axios";
 import { TopicPicker } from "@/components/quiz/TopicPicker";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
@@ -76,13 +76,22 @@ export function QuizPage() {
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6 py-5">
-          <Link
-            to="/"
-            className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={15} />
-            Back to lab
-          </Link>
+          <div className="flex items-center justify-between gap-4">
+            <Link
+              to="/"
+              className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft size={15} />
+              Back to lab
+            </Link>
+            <Link
+              to="/quizzes"
+              className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <History size={15} />
+              Previous Quizzes
+            </Link>
+          </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               <span className="bg-[linear-gradient(transparent_62%,var(--primary)_62%)] px-1 -mx-1">

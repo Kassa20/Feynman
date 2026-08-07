@@ -24,6 +24,22 @@ export type QuizResultResponse = {
   }[];
 };
 
+export type QuizListItem = {
+  id: string;
+  query: string;
+  difficulty: Difficulty;
+  score: number;
+  total: number;
+  submittedAt: string;
+  createdAt: string;
+};
+
+export type QuizDetailResponse = QuizResultResponse & {
+  query: string;
+  difficulty: Difficulty;
+  submittedAt: string;
+};
+
 export async function startQuiz(
   query: string,
   difficulty: Difficulty,
@@ -45,5 +61,15 @@ export async function submitQuiz(
     sessionId,
     answers,
   });
+  return data;
+}
+
+export async function listQuizzes(): Promise<QuizListItem[]> {
+  const { data } = await api.get<{ quizzes: QuizListItem[] }>("/api/quiz");
+  return data.quizzes;
+}
+
+export async function getQuizResult(id: string): Promise<QuizDetailResponse> {
+  const { data } = await api.get<QuizDetailResponse>(`/api/quiz/${id}`);
   return data;
 }
