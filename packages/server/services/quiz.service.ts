@@ -142,6 +142,9 @@ export const quizService = {
             };
         },
 
+
+
+        //////
     async submitQuiz(
         userId: string,
         sessionId: string,
@@ -180,6 +183,9 @@ export const quizService = {
         return { score, total, perQuestion };
     },
 
+
+
+    ///////
     async listQuizzes(userId: string): Promise<QuizListItem[]> {
         return quizRepository.listSessions(userId);
     },
@@ -223,9 +229,8 @@ export const quizService = {
     },
 }
 
-// Structural checks only, by decision. This catches questions that are
-// unanswerable or self-evidently broken; it does NOT verify that correctIndex is
-// actually the right answer.
+
+
 function isStructurallyValid(question: {
     question: string; choices: string[]; correctIndex: number; explanation: string;
 }): boolean {

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 export type NoteGenerationResult = {
     id: string;
     labGenerationId: string;
-    topic: string;
+    topic: string | null;
     question: string;
     title: string;
     content: string;
@@ -47,7 +47,7 @@ export const notesRepository = {
         return (data ?? []).map((row) => ({
             id: row.id,
             labGenerationId: row.lab_generation_id,
-            topic: (row.lab_generations as { topic_text: string }[] | null)?.[0]?.topic_text ?? 'Untitled lab',
+            topic: (row.lab_generations as { topic_text: string }[] | null)?.[0]?.topic_text ?? null,
             question: row.question,
             title: row.title,
             content: row.content,

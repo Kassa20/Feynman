@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 type Note = {
   id: string;
   labGenerationId: string;
-  topic: string;
+  topic: string | null;
   question: string;
   title: string;
   content: string;
@@ -82,7 +82,7 @@ export function NotesPage() {
     if (!term) return notes;
     return notes.filter((note) =>
       [note.title, note.content, note.question, note.topic].some((field) =>
-        field.toLowerCase().includes(term),
+        field?.toLowerCase().includes(term),
       ),
     );
   }, [notes, query]);
@@ -227,8 +227,12 @@ export function NotesPage() {
                   className={`flex h-full flex-col rounded-xl border border-border border-t-4 ${accent.bar} ${accent.tint} p-4 transition-colors hover:border-foreground/20`}
                 >
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <FlaskConical size={12} className={`shrink-0 ${accent.icon}`} />
-                    <span className="truncate">{note.topic}</span>
+                    {note.topic && (
+                      <>
+                        <FlaskConical size={12} className={`shrink-0 ${accent.icon}`} />
+                        <span className="truncate">{note.topic}</span>
+                      </>
+                    )}
                     <time
                       dateTime={note.createdAt}
                       className="ml-auto shrink-0 pl-2"
