@@ -10,6 +10,7 @@ import {
 import { conversationRepository } from '../repositories/conversation.repository';
 import { notesRepository } from '../repositories/notes.repository';
 import { updateActiveObservation } from '@langfuse/tracing';
+import { researchService } from './research.service';
 
 
 
@@ -80,7 +81,7 @@ export const labGenerationService = {
             yield {type: 'lab-delta', partial}
         }
 
-        // An aborted stream ends silently rather than throwing, so bail out here
+        // An aborted stream ends silently
         // instead of spending another LLM call and persisting a half-built lab.
         if (abortSignal.aborted) return;
 
@@ -92,8 +93,11 @@ export const labGenerationService = {
         if (starterCode) {
             yield {type: 'starter-code-start'};
             try {
+                const mcpResult = await researchService.research(
+                    topicText, labContent, abortSignal,
+                )
                 starterCodeContent = await starterCodeService.generate(
-                    topicText, skillLevel, environment, labContent, abortSignal,
+                    topicText, skillLevel, environment, labContent, mcpResult, abortSignal,
                 )
             } catch (error) {
                 if (abortSignal.aborted) return;
