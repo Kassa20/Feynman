@@ -38,15 +38,21 @@ export function QuizPage() {
       setTopic(query);
       setQuiz(started);
     } catch (caught) {
-      // 404 here means the corpus has no coverage — a distinct, expected outcome
-      // rather than a failure, so the server's message is shown verbatim.
-      const notCovered =
-        axios.isAxiosError(caught) && caught.response?.status === 404;
+      // 404 (no corpus coverage) and 429 (usage limit reached) are expected
+      // outcomes rather than failures, so the server's message is shown verbatim.
+      const status = axios.isAxiosError(caught)
+        ? caught.response?.status
+        : undefined;
+      const serverMessage = (caught as AxiosError<{ message?: string }>).response
+        ?.data?.message;
       setError(
-        notCovered
-          ? ((caught as AxiosError<{ message?: string }>).response?.data?.message ??
+        status === 404
+          ? (serverMessage ??
               `No textbook content covers "${query}" yet. Try one of the suggested topics.`)
-          : "Something went wrong generating your quiz.",
+          : status === 429
+            ? (serverMessage ??
+                "You've reached your quiz limit. Try again later.")
+            : "Something went wrong generating your quiz.",
       );
     } finally {
       setLoading(false);

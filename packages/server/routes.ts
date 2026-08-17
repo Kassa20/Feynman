@@ -4,6 +4,7 @@ import { chatController } from './controllers/chat.controller';
 import { conversationController } from './controllers/conversation.controller';
 import { labGenerationController } from './controllers/labGeneration.controller';
 import { requireAuth } from './middleware/auth.middleware';
+import { enforceUsageLimit } from './middleware/usageLimit.middleware';
 import { notesController } from './controllers/notes.controller';
 import { quizController } from './controllers/quiz.controller';
 
@@ -22,9 +23,9 @@ router.get('/api/labs/:id/starter-code', requireAuth, labGenerationController.do
 router.get('/api/quiz', requireAuth, quizController.list);
 router.get('/api/quiz/:id', requireAuth, quizController.getResult);
 
-router.post('/api/chat', requireAuth, chatController.sendMessage);
-router.post('/api/labs/generate', requireAuth, labGenerationController.generate);
-router.post('/api/quiz/start', requireAuth, quizController.start);
+router.post('/api/chat', requireAuth, enforceUsageLimit('chat_message'), chatController.sendMessage);
+router.post('/api/labs/generate', requireAuth, enforceUsageLimit('lab_generate'), labGenerationController.generate);
+router.post('/api/quiz/start', requireAuth, enforceUsageLimit('quiz_start'), quizController.start);
 router.post('/api/quiz/submit', requireAuth, quizController.submit);
 
 router.delete('/api/conversations/:id', requireAuth, conversationController.deleteConversation);

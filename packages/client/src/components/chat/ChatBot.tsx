@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, RotateCcw } from "lucide-react";
 import { ChatInput, type ChatFormData } from "./ChatInput";
 import { api, authHeaders } from "@/lib/api";
+import { LimitError, limitErrorFrom } from "@/lib/limitError";
 import { ChatMessages, type Message } from "./ChatMessages";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -143,6 +144,7 @@ export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
         body: JSON.stringify({ ...labData, conversationId, regenerate }),
         signal: controller.signal,
       });
+      if (response.status === 429) throw await limitErrorFrom(response);
       if (!response.ok || !response.body)
         throw new Error(`Request failed: ${response.status}`);
 
@@ -190,7 +192,9 @@ export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
       // server acted on). Leaving phase set would lock the generator form.
       settle();
     })().catch((err) => {
-      if ((err as Error).name !== "AbortError") {
+      if (err instanceof LimitError) {
+        setError(err.message);
+      } else if ((err as Error).name !== "AbortError") {
         setError("Something went wrong generating your lab.");
       }
       settle();
@@ -284,6 +288,7 @@ export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
         body: JSON.stringify({ prompt, conversationId, takeNotes }),
         signal: controller.signal,
       });
+      if (response.status === 429) throw await limitErrorFrom(response);
       if (!response.ok || !response.body)
         throw new Error(`Request failed: ${response.status}`);
 
@@ -316,7 +321,10 @@ export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
         }
       }
     } catch (err) {
-      if ((err as Error).name !== "AbortError") {
+      if (err instanceof LimitError) {
+        setMessages((prev) => prev.slice(0, -1));
+        setError(err.message);
+      } else if ((err as Error).name !== "AbortError") {
         setMessages((prev) => prev.slice(0, -1));
         setError(
           "Something went wrong sending your message. Please try again.",
