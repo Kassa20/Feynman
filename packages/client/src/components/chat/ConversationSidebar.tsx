@@ -62,7 +62,10 @@ export const ConversationSidebar = () => {
   };
 
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground">
+    <nav
+      aria-label="Conversations"
+      className="flex h-full w-64 shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground"
+    >
       <button
         onClick={onNewChat}
         className="flex items-center gap-2 rounded-xl border border-primary-foreground/15 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
@@ -71,23 +74,28 @@ export const ConversationSidebar = () => {
         New chat
       </button>
       {deleteError && (
-        <p className="shrink-0 px-1 text-xs text-[#E50914]">{deleteError}</p>
+        <p role="status" className="shrink-0 px-1 text-xs text-[#E50914]">
+          {deleteError}
+        </p>
       )}
-      <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
+      <ul
+        aria-busy={isLoading}
+        className="flex flex-1 flex-col gap-1 overflow-y-auto"
+      >
         {isLoading ? (
           Array.from({ length: 6 }).map((_, index) => (
-            <div
+            <li
               key={index}
               className="flex items-center gap-2 rounded-lg py-2 pr-9 pl-3"
             >
               <Skeleton className="size-2 shrink-0 rounded-full" />
               <Skeleton className="h-4 w-full max-w-40" />
-            </div>
+            </li>
           ))
         ) : (
           conversations.map((conversation, index) =>
           conversation.id === confirmingDeleteId ? (
-            <div
+            <li
               key={conversation.id}
               className="flex flex-col gap-2 rounded-lg bg-sidebar-accent px-3 py-2 text-sm text-sidebar-accent-foreground"
             >
@@ -111,9 +119,9 @@ export const ConversationSidebar = () => {
                   Delete
                 </Button>
               </div>
-            </div>
+            </li>
           ) : (
-            <div key={conversation.id} className="group relative">
+            <li key={conversation.id} className="group relative">
               <Link
                 to={`/chat/${conversation.id}`}
                 className={cn(
@@ -139,11 +147,11 @@ export const ConversationSidebar = () => {
               >
                 <Trash2 size={14} />
               </button>
-            </div>
+            </li>
           ),
           )
         )}
-      </div>
+      </ul>
       <div className="flex shrink-0 items-center justify-between gap-2 border-t border-sidebar-border pt-3">
         <Link
           to="/notes"
@@ -161,6 +169,6 @@ export const ConversationSidebar = () => {
         </Link>
         <UserMenu />
       </div>
-    </div>
+    </nav>
   );
 };

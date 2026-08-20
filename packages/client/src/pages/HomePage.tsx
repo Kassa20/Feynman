@@ -30,8 +30,19 @@ export function HomePage() {
 
   return (
     <div className="flex h-full">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:ring-3 focus:ring-ring/50"
+      >
+        Skip to main content
+      </a>
       <ConversationSidebar />
-      <div className="flex h-full min-h-0 flex-1 flex-col gap-3 p-3">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="flex h-full min-h-0 flex-1 flex-col gap-3 p-3 outline-none"
+      >
+        <h1 className="sr-only">Lab generator</h1>
         <div className="flex min-h-0 flex-1 gap-3">
           <div className="h-full w-full max-w-sm shrink-0">
             <LabGeneratorForm
@@ -57,7 +68,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

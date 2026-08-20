@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -77,6 +77,11 @@ export const LabGeneratorForm = ({
   });
 
   const skillLevel = watch("skillLevel");
+  const topicId = useId();
+  const topicErrorId = useId();
+  const skillLevelLabelId = useId();
+  const skillLevelErrorId = useId();
+  const environmentId = useId();
 
   // The inputs are uncontrolled, so the only way to fill them from outside is to
   // hand react-hook-form the values. A fresh object arrives on every Regenerate
@@ -107,41 +112,60 @@ export const LabGeneratorForm = ({
     >
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto">
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+          <label
+            htmlFor={topicId}
+            className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
+          >
             <span className="size-2 rounded-sm bg-sky-500" aria-hidden />
             Topic
-          </div>
+          </label>
           <Textarea
+            id={topicId}
             {...register("topic")}
             placeholder="e.g. Set up a local Kubernetes cluster with a sample microservice"
             className="min-h-24 max-h-64 resize-y"
             maxLength={250}
+            aria-invalid={Boolean(errors.topic)}
+            aria-describedby={errors.topic ? topicErrorId : undefined}
           />
           {errors.topic && (
-            <p className="mt-1 text-sm text-destructive">
+            <p id={topicErrorId} className="mt-1 text-sm text-destructive">
               {errors.topic.message}
             </p>
           )}
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+          <div
+            id={skillLevelLabelId}
+            className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
+          >
             <span className="size-2 rounded-sm bg-amber-400" aria-hidden />
             Your skill level
           </div>
           <input type="hidden" {...register("skillLevel")} />
-          <div className="flex gap-2">
+          <div
+            role="radiogroup"
+            aria-labelledby={skillLevelLabelId}
+            aria-invalid={Boolean(errors.skillLevel)}
+            aria-describedby={
+              errors.skillLevel ? skillLevelErrorId : undefined
+            }
+            className="flex gap-2"
+          >
             {skillLevels.map((option) => (
               <button
                 key={option.value}
                 type="button"
+                role="radio"
+                aria-checked={skillLevel === option.value}
                 onClick={() =>
                   setValue("skillLevel", option.value, {
                     shouldValidate: true,
                   })
                 }
                 className={cn(
-                  "flex-1 rounded-xl border px-2 py-2.5 text-center text-sm font-semibold",
+                  "flex-1 rounded-xl border px-2 py-2.5 text-center text-sm font-semibold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
                   skillLevel === option.value
                     ? option.selected
                     : "border-border bg-background hover:bg-muted",
@@ -152,20 +176,24 @@ export const LabGeneratorForm = ({
             ))}
           </div>
           {errors.skillLevel && (
-            <p className="mt-1 text-sm text-destructive">
+            <p id={skillLevelErrorId} className="mt-1 text-sm text-destructive">
               {errors.skillLevel.message}
             </p>
           )}
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+          <label
+            htmlFor={environmentId}
+            className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
+          >
             <span className="size-2 rounded-sm bg-emerald-500" aria-hidden />
             Target environment
-          </div>
+          </label>
           <select
+            id={environmentId}
             {...register("environment")}
-            className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none"
+            className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <option value="macos">macOS</option>
             <option value="linux">Linux</option>

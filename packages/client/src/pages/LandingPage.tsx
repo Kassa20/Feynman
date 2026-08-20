@@ -44,6 +44,12 @@ const pipeline = [
 export function LandingPage() {
   return (
     <div className="min-h-full bg-[#fdfcf8] text-[#3a352b]">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[#3a352b] focus:ring-2 focus:ring-[#2f6fce]"
+      >
+        Skip to main content
+      </a>
       {/* Nav */}
       <header className="sticky top-0 z-10 border-b border-[#ece5d6] bg-[#fdfcf8]/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
@@ -53,7 +59,7 @@ export function LandingPage() {
             </div>
             <span className="text-[17px] font-bold">Lab Generator</span>
           </div>
-          <nav className="flex items-center gap-2 sm:gap-5">
+          <nav aria-label="Main" className="flex items-center gap-2 sm:gap-5">
             <a
               href="#how-it-works"
               className="hidden text-sm font-semibold text-[#6b6455] hover:text-[#3a352b] sm:block"
@@ -76,6 +82,7 @@ export function LandingPage() {
         </div>
       </header>
 
+      <main id="main" tabIndex={-1} className="outline-none">
       {/* Hero */}
       <section className="mx-auto grid max-w-5xl items-center gap-12 px-6 pb-20 pt-16 lg:grid-cols-[1.1fr_1fr] lg:pt-24">
         <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-500">
@@ -159,7 +166,11 @@ export function LandingPage() {
       </section>
 
       {/* Pipeline */}
-      <section id="how-it-works" className="border-t border-[#ece5d6] bg-white">
+      <section
+        id="how-it-works"
+        tabIndex={-1}
+        className="border-t border-[#ece5d6] bg-white outline-none"
+      >
         <div className="mx-auto max-w-5xl px-6 py-20">
           <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#00937a]">
             Under the hood
@@ -247,6 +258,7 @@ export function LandingPage() {
           </Link>
         </div>
       </section>
+      </main>
 
       <footer className="border-t border-[#ece5d6] py-8 text-center text-xs text-[#a89c88]">
         &copy; {new Date().getFullYear()} Lab Generator

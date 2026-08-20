@@ -50,6 +50,7 @@ export const ChatInput = ({
                validate: (data) => data.trim().length > 0,
             })}
             disabled={disabled}
+            aria-label="Message"
             className="w-full border-0 shadow-none focus-visible:ring-0 resize-none"
             placeholder="Ask anything..."
             maxLength={500}
@@ -85,6 +86,7 @@ export const ChatInput = ({
             <Button
                disabled={!formState.isValid || disabled}
                type="submit"
+               aria-label="Send message"
                className="rounded-full w-9 h-9"
             >
                <FaArrowUp />

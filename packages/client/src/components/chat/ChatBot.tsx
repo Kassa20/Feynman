@@ -418,13 +418,20 @@ export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
       >
         <ChatMessages messages={displayMessages} />
         {streamingLab && <StreamingLab content={streamingLab} />}
+        <p role="status" aria-live="polite" className="sr-only">
+          {phase === "starter-code" ? "Generating starter code" : ""}
+        </p>
         {phase === "starter-code" && (
-          <p className="text-sm text-muted-foreground">
+          <p aria-hidden className="text-sm text-muted-foreground">
             Generating starter code…
           </p>
         )}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <ChatInput
         onSubmit={onSubmit}
         disabled={sendingMessage}
