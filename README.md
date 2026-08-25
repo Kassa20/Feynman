@@ -4,6 +4,16 @@ Pick a software or coding topic and get a step-by-step, hands-on lab generated b
 LLM and tailored to your skill level. Chat with a tutor alongside the lab, take notes
 automatically, and finish with a quiz grounded in real textbook content.
 
+## Why
+
+I built this because I found I had to set up a new project with new dependencies every
+time I wanted to learn something new. And each conversation I had with an LLM might get
+lost, or the important details might be buried as the conversation grew longer.
+
+With Feynman, a code environment is created automatically. Each important concept the
+LLM explains is noted down and persisted by an agent. And a quiz is available to
+reinforce learning, also persisted for later review.
+
 ## Features
 
 - **Lab generation** — streams a structured lab (title + steps, optional shell code
@@ -28,6 +38,8 @@ automatically, and finish with a quiz grounded in real textbook content.
   Auth (Bearer tokens validated by server middleware), pgvector for quiz RAG.
 - **OpenAI** (via Vercel AI SDK) — lab/chat/quiz generation and the quiz judge.
 - **Langfuse** — LLM tracing, wired through an OpenTelemetry `NodeSDK`.
+
+![alt text](image.png)
 
 ### Deployment
 
