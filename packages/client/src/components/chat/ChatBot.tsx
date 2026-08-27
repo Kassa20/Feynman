@@ -414,7 +414,7 @@ export const ChatBot = ({ onRegenerate, onGeneratingChange }: Props) => {
       <div
         ref={containerRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto"
+        className="relative flex-1 overflow-y-auto"
       >
         <ChatMessages messages={displayMessages} />
         {streamingLab && <StreamingLab content={streamingLab} />}
